@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>SciFigure Agent Studio · 智能科研绘图工作台</title>
+<title>miniAgent</title>
 
 <!-- 第三方库 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -487,7 +487,8 @@ input, textarea, select {
     min-height: 0;
     overflow: auto;
 }
-/* HTML 交互图模式:iframe 撑满,不需要居中 */
+/* SVG / HTML 模式:让子节点撑满整个视口 */
+.image-viewport.svg-mode,
 .image-viewport.html-mode {
     align-items: stretch;
     justify-content: stretch;
@@ -501,24 +502,27 @@ input, textarea, select {
 }
 /* SVG 输出:让内联 svg 自适应视口 */
 .image-viewport .svg-host {
-    max-width: 100%;
-    max-height: 100%;
+    width: 100%;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
 }
 .image-viewport .svg-host svg {
+    width: 100%;
+    height: 100%;
     max-width: 100%;
     max-height: 100%;
-    height: auto;
-    width: auto;
     display: block;
 }
 /* HTML 交互图:iframe 充满整个视口,允许内部自己滚动 */
 .image-viewport iframe.html-host {
+    display: block;
     width: 100%;
     height: 100%;
-    flex: 1;
+    min-width: 0;
+    min-height: 0;
     border: none;
     background: white;
     border-radius: 10px;
@@ -546,6 +550,56 @@ input, textarea, select {
     font-size: 14px;
     min-width: 60px;
     text-align: center;
+}
+
+/* 导出下拉菜单 */
+.export-dropdown { position: relative; display: inline-block; }
+.export-menu {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 6px);
+    background: white;
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(15,23,42,0.16);
+    padding: 6px;
+    min-width: 260px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.export-menu[hidden] { display: none; }
+.export-opt {
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 10px;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-family: inherit;
+    color: inherit;
+    transition: background 0.1s;
+}
+.export-opt:hover:not(:disabled) {
+    background: var(--secondary-bg);
+}
+.export-opt:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+.export-opt .opt-name {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--primary-darker);
+}
+.export-opt:disabled .opt-name { color: var(--text-muted); }
+.export-opt .opt-hint {
+    font-size: 12px;
+    color: var(--text-muted);
 }
 
 /* 数据预览表格 */
@@ -967,13 +1021,10 @@ textarea.form-input {
          ============================================================ -->
     <div class="top-bar">
         <div class="title-box">
-            <div class="app-title">SciFigure Agent Studio</div>
-            <div class="app-subtitle">Skill 驱动 · 智能体绘图 · 自然语言迭代</div>
+            <div class="app-title">miniAgent</div>
         </div>
         <div class="spacer"></div>
         <span id="modelBadge" class="model-badge warn">⚠️ 未配置模型</span>
-        <button class="btn secondary" id="btnImportTop">导入数据</button>
-        <button class="btn secondary" id="btnExportTop">导出图像</button>
         <button class="btn" id="btnConfigTop">模型配置</button>
     </div>
 
@@ -990,7 +1041,7 @@ textarea.form-input {
 
                 <div class="section-header">SKILLS · 专业技能</div>
                 <div class="skill-list" id="skillList"></div>
-                <button class="btn ghost" id="btnAddSkill">＋ 添加 Skill 文件…</button>
+                <button class="btn ghost" id="btnAddSkillDir">＋ 添加 Skill 文件夹…</button>
 
                 <div class="section-header">TOOLS · 工具</div>
                 <div class="tool-list" id="toolList"></div>
@@ -1009,12 +1060,11 @@ textarea.form-input {
             </div>
         </div>
 
-        <!-- ===== 中栏:可视化反馈 ===== -->
+        <!-- ===== 中栏 ===== -->
         <div class="panel">
             <div class="center-head">
-                <div class="center-title">可视化反馈</div>
                 <div class="spacer"></div>
-                <div class="center-meta" id="imageMeta">等待 Agent 产出图像…</div>
+                <div class="center-meta" id="imageMeta"></div>
             </div>
             <div class="tabs">
                 <button class="tab active" data-tab="image">图像</button>
@@ -1040,7 +1090,23 @@ textarea.form-input {
                             <span class="image-index" id="imageIndex">—</span>
                             <button class="btn secondary" id="btnNextImg" disabled>下一张 ▶</button>
                             <div class="spacer"></div>
-                            <button class="btn secondary" id="btnExportImg">导出当前</button>
+                            <div class="export-dropdown">
+                                <button class="btn secondary" id="btnExportImg">导出 ▾</button>
+                                <div class="export-menu" id="exportMenu" role="menu" hidden>
+                                    <button class="export-opt" data-fmt="png" role="menuitem">
+                                        <span class="opt-name">PNG</span>
+                                        <span class="opt-hint">位图,适合 PPT / 微信 / 邮件</span>
+                                    </button>
+                                    <button class="export-opt" data-fmt="svg" role="menuitem">
+                                        <span class="opt-name">SVG</span>
+                                        <span class="opt-hint">矢量,可无限缩放 / 二次编辑</span>
+                                    </button>
+                                    <button class="export-opt" data-fmt="html" role="menuitem">
+                                        <span class="opt-name">HTML</span>
+                                        <span class="opt-hint">独立网页,保留交互</span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1205,8 +1271,9 @@ A,Control,1.2"></textarea>
 </div>
 
 <!-- 隐藏的文件 input -->
-<input type="file" id="fileSkill" accept=".md,.markdown,.txt" style="display:none" />
+<input type="file" id="fileSkillDir" webkitdirectory directory multiple style="display:none" />
 <input type="file" id="fileRef" accept=".md,.markdown,.txt,.svg,.py,.json,.html,.htm" multiple style="display:none" />
+<input type="file" id="fileRefDir" webkitdirectory directory multiple style="display:none" />
 <input type="file" id="fileData" accept=".csv,.txt,.xlsx,.xls,.json" style="display:none" />
 
 <!-- toast 容器 -->
@@ -1480,10 +1547,12 @@ const Skills = {
 
     addFromText(text, sourceName = "uploaded.md") {
         const { name, description, body } = this.parse(text, sourceName.replace(/\.[^.]+$/, ""));
-        // 去重:相同 source_name 则刷新(保留 references)
-        const existing = this.list.find(s => s.source_name === sourceName);
+        // 去重:只有 source_name **且** parsed name 都一致时,才视为同一个 Skill 的刷新。
+        // 这样:
+        //  · 用户重复上传同一文件 -> 刷新内容(保留 references)
+        //  · 不同项目里都有 SKILL.md 但 name 不同 -> 各自成为独立 Skill,可以并存
+        const existing = this.list.find(s => s.source_name === sourceName && s.name === name);
         if (existing) {
-            existing.name = name;
             existing.description = description;
             existing.body = body;
             if (!existing.references) existing.references = {};
@@ -1502,37 +1571,92 @@ const Skills = {
         return sk;
     },
 
-    /** 给某个 Skill 追加一个参考文件。filename 用基本名(不含路径) */
+    /** 给某个 Skill 追加一个参考文件。
+     *  filename 可以是裸文件名(`bar.html`),也可以是相对路径(`charts/bar/template.html`)。
+     *  使用"相对路径"作为 key,这样同名但来自不同子目录的模板可以并存。
+     *  路径会做标准化:统一用 '/',去掉前导 './',折叠多余的 '/'。
+     */
     addReference(skillId, filename, text) {
         const sk = this.list.find(s => s.id === skillId);
         if (!sk) throw new Error("Skill 不存在");
         if (!sk.references) sk.references = {};
-        const base = String(filename).split(/[/\\]/).pop();
-        sk.references[base] = text;
+        const key = this._normalizeRefPath(filename);
+        sk.references[key] = text;
         this.save();
-        return base;
+        return key;
     },
 
     removeReference(skillId, filename) {
         const sk = this.list.find(s => s.id === skillId);
         if (!sk || !sk.references) return;
-        delete sk.references[filename];
+        // 优先按完整 key 删,删不到再按 basename 容错
+        if (filename in sk.references) {
+            delete sk.references[filename];
+        } else {
+            const target = String(filename).split(/[/\\]/).pop().toLowerCase();
+            for (const k of Object.keys(sk.references)) {
+                if (k.split("/").pop().toLowerCase() === target) {
+                    delete sk.references[k];
+                    break;
+                }
+            }
+        }
         this.save();
     },
 
-    /** 在所有启用的 skill 里按 basename 找一个参考文件 */
+    /** 标准化参考路径:全部小写斜杠化,去前导斜杠和 './',折叠多 / */
+    _normalizeRefPath(p) {
+        let s = String(p || "").replace(/\\/g, "/").replace(/^\.\/+/, "");
+        // 去掉前导 '/' 防止变成绝对路径
+        s = s.replace(/^\/+/, "");
+        // 折叠 //
+        s = s.replace(/\/{2,}/g, "/");
+        return s;
+    },
+
+    /** 在所有启用的 skill 里按 filename 找一个参考文件。
+     *  按下面顺序匹配,任一命中即返回:
+     *    1) 完整 key(大小写不敏感):charts/bar/template.html
+     *    2) 末段 basename:template.html
+     *    3) 不带扩展名的 basename:template
+     *  如果第 2 步有多个候选(歧义),返回第一个但在 stderr 警告;
+     *  Agent 应优先使用完整路径来精确命中。
+     */
     findReference(filename) {
-        const target = String(filename).split(/[/\\]/).pop().toLowerCase();
+        const norm = this._normalizeRefPath(filename).toLowerCase();
+        const target = norm.split("/").pop();
+        const targetNoExt = target.replace(/\.[^.]+$/, "");
+
+        // 1) 完整 key
         for (const sk of this.list) {
             if (!sk.enabled || !sk.references) continue;
             for (const [k, v] of Object.entries(sk.references)) {
-                if (k.toLowerCase() === target) return { skill: sk, filename: k, content: v };
+                if (k.toLowerCase() === norm) return { skill: sk, filename: k, content: v };
             }
-            // 容错:用户可能写了不带扩展名/不同扩展名
+        }
+        // 2) 末段 basename(可能撞多个,取首个)
+        const baseHits = [];
+        for (const sk of this.list) {
+            if (!sk.enabled || !sk.references) continue;
             for (const [k, v] of Object.entries(sk.references)) {
-                const kBase = k.toLowerCase().replace(/\.[^.]+$/, "");
-                const tBase = target.replace(/\.[^.]+$/, "");
-                if (kBase === tBase) return { skill: sk, filename: k, content: v };
+                if (k.toLowerCase().split("/").pop() === target) {
+                    baseHits.push({ skill: sk, filename: k, content: v });
+                }
+            }
+        }
+        if (baseHits.length === 1) return baseHits[0];
+        if (baseHits.length > 1) {
+            console.warn(
+                `findReference: "${filename}" 在 ${baseHits.length} 处命中末段名,建议改用完整相对路径。已返回第一个: ${baseHits[0].filename}`
+            );
+            return baseHits[0];
+        }
+        // 3) 无扩展名 basename
+        for (const sk of this.list) {
+            if (!sk.enabled || !sk.references) continue;
+            for (const [k, v] of Object.entries(sk.references)) {
+                const kBase = k.toLowerCase().split("/").pop().replace(/\.[^.]+$/, "");
+                if (kBase === targetNoExt) return { skill: sk, filename: k, content: v };
             }
         }
         return null;
@@ -1583,10 +1707,12 @@ const Skills = {
                 if (htmlCount) hints.push(`其中 ${htmlCount} 份是 HTML 交互图模板:读取后学习其结构、配色、交互(tooltip/hover/筛选/动画)以及它引入的 CDN 库,产出风格与交互一致的 HTML。`);
                 const hintBlock = hints.length ? "\n" + hints.join("\n") : "";
                 refIndex = `\n<references>
-本技能附带 ${views.length} 份参考模板文件(已存放在本地,可按需读取,不会自动注入到上下文):
+本技能附带 ${views.length} 份参考模板文件(已存放在本地,可按需读取,不会自动注入到上下文)。
+路径形如 \`charts/bar/template.html\`,**优先使用完整相对路径**调用 read_template,这样
+同名但来自不同子目录的模板能精确命中,不会取错。
 ${items}${hintBlock}
 当你判断某份模板与当前任务相关时,**必须**在回复中输出形如:
-{"kind": "read_template", "filename": "对应文件名", "message": "为什么需要它"}
+{"kind": "read_template", "filename": "完整相对路径或独有的文件名", "message": "为什么需要它"}
 系统会把该文件正文返回给你,然后再继续生成代码。
 不要凭空记忆模板内容,以本地实际文件为准。
 </references>`;
@@ -2044,24 +2170,20 @@ const OutputRenderer = {
     /** 把产出物渲染进给定的视口元素 */
     renderInto(viewport, artifact) {
         viewport.innerHTML = "";
-        viewport.classList.remove("html-mode");
+        viewport.classList.remove("html-mode", "svg-mode");
         if (!artifact) return;
         if (artifact.type === "html") {
-            // 用 iframe + srcdoc 让交互 HTML 在隔离的浏览上下文里运行,
-            // 这样 <script>(D3 / Plotly / ECharts 等)能正常工作,
-            // 又不会污染主页面的样式或全局变量。
             viewport.classList.add("html-mode");
             const frame = document.createElement("iframe");
             frame.className = "html-host";
-            // 允许脚本(必需),允许 same-origin 让 CDN 库正常加载 fetch/AJAX
             frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-popups allow-forms");
             frame.setAttribute("referrerpolicy", "no-referrer");
             frame.srcdoc = this._wrapHtml(artifact.html);
             viewport.appendChild(frame);
         } else if (artifact.type === "svg") {
+            viewport.classList.add("svg-mode");
             const host = document.createElement("div");
             host.className = "svg-host";
-            // 直接内联 SVG,矢量、可无限缩放、文字清晰
             host.innerHTML = this._sanitizeSvg(artifact.svg);
             viewport.appendChild(host);
         } else {
@@ -2090,7 +2212,10 @@ const OutputRenderer = {
         container.appendChild(frame);
     },
 
-    /** 轻量清理:去掉 <script>,防止参考 SVG 里夹带脚本 */
+    /** 轻量清理:去掉 <script>,防止参考 SVG 里夹带脚本;
+     *  同时给根 <svg> 标签注入响应式尺寸,确保它在容器里自适应铺满。
+     *  许多 LLM 产出的 SVG 只写 viewBox 不写 width/height,
+     *  inline 到 div 后会被浏览器按"固有 300x150"渲染,看起来像没显示。 */
     _sanitizeSvg(svgText) {
         let s = String(svgText || "");
         s = s.replace(/<\?xml[\s\S]*?\?>/gi, "");
@@ -2098,7 +2223,22 @@ const OutputRenderer = {
         s = s.replace(/<script[\s\S]*?<\/script>/gi, "");
         s = s.replace(/\son\w+\s*=\s*"[^"]*"/gi, "");
         s = s.replace(/\son\w+\s*=\s*'[^']*'/gi, "");
-        return s.trim();
+        s = s.trim();
+
+        // 在根 <svg ... > 的属性里强制 width/height = 100% 并保留宽高比
+        s = s.replace(/^<svg\b([^>]*)>/i, (full, attrs) => {
+            let a = String(attrs || "");
+            // 替换或新增 width / height
+            a = a.replace(/\swidth\s*=\s*("[^"]*"|'[^']*')/i,  "");
+            a = a.replace(/\sheight\s*=\s*("[^"]*"|'[^']*')/i, "");
+            // 若没有 preserveAspectRatio 就补一个,让它在容器里居中等比缩放
+            if (!/preserveAspectRatio\s*=/.test(a)) {
+                a += ' preserveAspectRatio="xMidYMid meet"';
+            }
+            a += ' width="100%" height="100%"';
+            return `<svg${a}>`;
+        });
+        return s;
     },
 
     /** 为交互式 HTML 套一个最小外壳(若用户已经写了完整 <html> 就直接用) */
@@ -2125,27 +2265,180 @@ ${s}
 </html>`;
     },
 
-    /** 导出产出物为文件 */
-    download(artifact, basename) {
-        const a = document.createElement("a");
+    /** 把 SVG 文本光栅化成 PNG dataURL。
+     *  scale 用于提高 DPI,2 -> 2x 像素密度,适合屏幕/报告。
+     *  返回 Promise<dataUrl>。 */
+    async svgToPng(svgText, scale = 2) {
+        // 让浏览器能算 viewBox -> 像素,需要确保 svg 有内在尺寸。
+        // 取 viewBox 推算 px,缺省 1200x800。
+        const safe = this._sanitizeSvgForExport(svgText);
+        const { width, height } = this._svgPxDimensions(safe);
+        const blob  = new Blob([safe], { type: "image/svg+xml;charset=utf-8" });
+        const url   = URL.createObjectURL(blob);
+        try {
+            const img = await new Promise((resolve, reject) => {
+                const im = new Image();
+                im.onload  = () => resolve(im);
+                im.onerror = (e) => reject(new Error("SVG 解码失败,无法转 PNG。"));
+                im.src = url;
+            });
+            const canvas = document.createElement("canvas");
+            canvas.width  = Math.round(width  * scale);
+            canvas.height = Math.round(height * scale);
+            const ctx = canvas.getContext("2d");
+            // 白底,避免透明 PNG 放进白色 PPT 时边缘看不见
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            return canvas.toDataURL("image/png");
+        } finally {
+            URL.revokeObjectURL(url);
+        }
+    },
+
+    /** 导出时用的清理:与 _sanitizeSvg 一样除掉 script/事件属性,
+     *  但**不**强行注入 100% 宽高(那是用于内联渲染的),
+     *  保留 svg 自身的 viewBox/尺寸以便光栅化时按真实比例算像素。 */
+    _sanitizeSvgForExport(svgText) {
+        let s = String(svgText || "");
+        s = s.replace(/<\?xml[\s\S]*?\?>/gi, "");
+        s = s.replace(/<!DOCTYPE[\s\S]*?>/gi, "");
+        s = s.replace(/<script[\s\S]*?<\/script>/gi, "");
+        s = s.replace(/\son\w+\s*=\s*"[^"]*"/gi, "");
+        s = s.replace(/\son\w+\s*=\s*'[^']*'/gi, "");
+        s = s.trim();
+        // 补 xmlns(Blob -> Image 必需)
+        if (!/xmlns\s*=/.test(s)) {
+            s = s.replace(/^<svg\b/i, '<svg xmlns="http://www.w3.org/2000/svg"');
+        }
+        return s;
+    },
+
+    /** 推断一段 SVG 的像素尺寸 */
+    _svgPxDimensions(svgText) {
+        const head = String(svgText).match(/<svg\b([^>]*)>/i);
+        if (!head) return { width: 1200, height: 800 };
+        const attrs = head[1] || "";
+        const wM = attrs.match(/\swidth\s*=\s*("([^"]*)"|'([^']*)')/i);
+        const hM = attrs.match(/\sheight\s*=\s*("([^"]*)"|'([^']*)')/i);
+        const vM = attrs.match(/viewBox\s*=\s*("([^"]*)"|'([^']*)')/i);
+        const parsePx = (raw) => {
+            if (!raw) return null;
+            const m = String(raw).trim().match(/^(\d+(?:\.\d+)?)\s*(px)?$/i);
+            return m ? parseFloat(m[1]) : null;
+        };
+        let w = wM ? parsePx(wM[2] || wM[3]) : null;
+        let h = hM ? parsePx(hM[2] || hM[3]) : null;
+        if ((!w || !h) && vM) {
+            const parts = String(vM[2] || vM[3]).trim().split(/[\s,]+/).map(Number);
+            if (parts.length === 4 && parts.every(n => !Number.isNaN(n))) {
+                w = w || parts[2];
+                h = h || parts[3];
+            }
+        }
+        if (!w || !h) { w = 1200; h = 800; }
+        return { width: w, height: h };
+    },
+
+    /** 给定一个产出物,返回它能被导出成哪些格式。
+     *  返回 { png, svg, html },每个是 { ok: bool, reason: string }。
+     *  reason 用作 UI tooltip。 */
+    availableFormats(artifact) {
+        if (!artifact) {
+            const dead = { ok: false, reason: "尚未生成任何图像" };
+            return { png: dead, svg: dead, html: dead };
+        }
+        if (artifact.type === "png") {
+            return {
+                png:  { ok: true,  reason: "原始位图" },
+                svg:  { ok: false, reason: "位图无法升级为矢量(无矢量信息)" },
+                html: { ok: true,  reason: "把位图嵌入独立 HTML 网页" },
+            };
+        }
+        if (artifact.type === "svg") {
+            return {
+                png:  { ok: true,  reason: "把矢量图按 2× 像素密度光栅化为 PNG" },
+                svg:  { ok: true,  reason: "原始矢量,可二次编辑" },
+                html: { ok: true,  reason: "把 SVG 嵌入独立 HTML 网页" },
+            };
+        }
         if (artifact.type === "html") {
-            const blob = new Blob([this._wrapHtml(artifact.html)], { type: "text/html;charset=utf-8" });
-            a.href = URL.createObjectURL(blob);
-            a.download = `${basename}.html`;
-        } else if (artifact.type === "svg") {
-            const blob = new Blob([artifact.svg], { type: "image/svg+xml" });
-            a.href = URL.createObjectURL(blob);
-            a.download = `${basename}.svg`;
-        } else {
-            a.href = artifact.dataUrl;
-            a.download = `${basename}.png`;
+            return {
+                png:  { ok: false, reason: "交互图基于动态 DOM,无法在不丢失交互前提下转成静态 PNG;若需 PNG 请让 Agent 用 matplotlib 重画一遍" },
+                svg:  { ok: false, reason: "交互图含 JS/事件,无法转 SVG 矢量" },
+                html: { ok: true,  reason: "原始交互式 HTML,双击可在浏览器打开" },
+            };
         }
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        if (artifact.type === "svg" || artifact.type === "html") {
-            setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        const dead = { ok: false, reason: "未知产出物类型" };
+        return { png: dead, svg: dead, html: dead };
+    },
+
+    /** 按用户选择的格式导出。format ∈ 'png' | 'svg' | 'html'。
+     *  返回 Promise(SVG→PNG 光栅化是异步的)。
+     *  若格式与 artifact 不兼容,抛 Error。 */
+    async exportAs(artifact, format, basename) {
+        if (!artifact) throw new Error("没有可导出的图像。");
+        const avail = this.availableFormats(artifact);
+        if (!avail[format] || !avail[format].ok) {
+            throw new Error(avail[format] ? avail[format].reason : `不支持的格式: ${format}`);
         }
+
+        if (format === "png") {
+            if (artifact.type === "png") {
+                return this._downloadDataUrl(artifact.dataUrl, `${basename}.png`);
+            }
+            if (artifact.type === "svg") {
+                const png = await this.svgToPng(artifact.svg, 2);
+                return this._downloadDataUrl(png, `${basename}.png`);
+            }
+            // html 已被 availableFormats 拦掉
+        }
+
+        if (format === "svg") {
+            if (artifact.type === "svg") {
+                return this._downloadBlob(
+                    this._sanitizeSvgForExport(artifact.svg),
+                    "image/svg+xml;charset=utf-8",
+                    `${basename}.svg`
+                );
+            }
+            // png/html 已被拦掉
+        }
+
+        if (format === "html") {
+            if (artifact.type === "html") {
+                return this._downloadBlob(
+                    this._wrapHtml(artifact.html),
+                    "text/html;charset=utf-8",
+                    `${basename}.html`
+                );
+            }
+            if (artifact.type === "png") {
+                // 把 PNG 包成 <img src="data:image/png;base64,…"> 的独立 HTML
+                const body = `<img src="${artifact.dataUrl}" alt="figure" style="max-width:100%;height:auto;display:block;margin:0 auto;">`;
+                return this._downloadBlob(this._wrapHtml(body), "text/html;charset=utf-8", `${basename}.html`);
+            }
+            if (artifact.type === "svg") {
+                // 把 SVG 内联进 HTML(原始矢量)
+                const body = this._sanitizeSvgForExport(artifact.svg);
+                return this._downloadBlob(this._wrapHtml(body), "text/html;charset=utf-8", `${basename}.html`);
+            }
+        }
+        throw new Error(`不支持的格式: ${format}`);
+    },
+
+    _downloadBlob(content, mime, filename) {
+        const blob = new Blob([content], { type: mime });
+        const url  = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    },
+    _downloadDataUrl(dataUrl, filename) {
+        const a = document.createElement("a");
+        a.href = dataUrl; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
     },
 };
 
@@ -2451,7 +2744,7 @@ const Agent = {
     buildSystemPrompt(df) {
         const skillBlock = Skills.buildPromptSection();
         const dataBlock = this._dataBrief(df);
-        return `你是 SciFigure AI Studio 的绘图 Agent,在用户的网页应用中协助科研绘图、架构图与交互式图表绘制。
+        return `你是 miniAgent 的绘图 Agent,在用户的网页应用中协助科研绘图、架构图与交互式图表绘制。
 你必须严格遵守激活的技能(skills)中给出的模板、配色、字体、图表风格。
 
 【输出格式 - 重要】
@@ -2661,13 +2954,17 @@ ${dataBlock}`;
                 }
                 const hit = Skills.findReference(fname);
                 if (!hit) {
-                    const avail = Object.keys(
-                        Skills.enabled().reduce((acc, sk) => Object.assign(acc, sk.references || {}), {})
-                    );
+                    // 收集"<skill 名>: <相对路径>"清单,完整列出,不去重
+                    const avail = [];
+                    for (const sk of Skills.enabled()) {
+                        for (const k of Object.keys(sk.references || {})) {
+                            avail.push(`${sk.name} :: ${k}`);
+                        }
+                    }
                     work.push({ role: "assistant", content: raw });
                     work.push({
                         role: "user",
-                        content: `未找到名为 "${fname}" 的模板文件。当前可用文件:${avail.join(", ") || "(无)"}。请改用正确的文件名重新发送 read_template,或直接进入 code 阶段。`,
+                        content: `未找到名为 "${fname}" 的模板文件。下面是所有可用模板(格式为"技能名 :: 相对路径"):\n${avail.join("\n") || "(无)"}\n请用完整相对路径(如 \`charts/bar/template.html\`)重新发送 read_template,或直接进入 code 阶段。`,
                     });
                     if (++readCount > MAX_READ_ROUNDS) break;
                     continue;
@@ -2902,7 +3199,7 @@ function renderSkills() {
     if (!Skills.list.length) {
         list.appendChild(el("div", {
             class: "subtle",
-            text: '尚未加载任何 Skill。点击下方「添加 Skill 文件」或使用内置技能。'
+            text: '尚未加载任何 Skill。点击下方「添加 Skill 文件夹」一次性导入(目录里的 SKILL.md 自动成为技能,其余文件自动作为参考模板),或使用内置技能。'
         }));
         return;
     }
@@ -2953,18 +3250,28 @@ function renderSkills() {
             class: "ref-title",
             text: `参考模板 (${refNames.length})`,
         }));
-        const addRefBtn = el("button", {
+        // 两个上传入口:文件 / 文件夹
+        refHead.appendChild(el("button", {
             class: "mini-link",
-            text: "＋ 添加",
-            onclick: () => triggerAddReference(sk.id),
-        });
-        refHead.appendChild(addRefBtn);
+            text: "＋ 文件",
+            title: "上传一个或多个模板文件",
+            onclick: () => triggerAddReference(sk.id, false),
+        }));
+        refHead.appendChild(el("button", {
+            class: "mini-link",
+            text: "＋ 文件夹",
+            title: "上传整个文件夹,保留相对路径,同名子文件可共存",
+            onclick: () => triggerAddReference(sk.id, true),
+        }));
         refBox.appendChild(refHead);
 
         if (refNames.length === 0) {
             refBox.appendChild(el("div", {
                 class: "ref-empty",
-                text: 'SKILL.md 引用的模板文件需要在这里上传一次,Agent 才能按需读取。支持 .md / .txt / .py / .svg / .html —— SVG 与 HTML 模板会被分别当作图形风格/交互风格参考。',
+                text: '上传模板:'
+                    + '"+ 文件"挑选一个或多个文件 / '
+                    + '"+ 文件夹"递归整个目录(同名不同目录的文件按相对路径共存,不会覆盖)。'
+                    + '支持 .md / .txt / .py / .svg / .html。',
             }));
         } else {
             const ul = el("div", { class: "ref-list" });
@@ -2978,7 +3285,19 @@ function renderSkills() {
                     class: "ref-type-tag " + tagClass,
                     text: view.label,
                 }));
-                item.appendChild(el("span", { class: "ref-name", text: fn }));
+                // 路径/文件名分段展示:目录浅色,basename 深色,且加 title 显示完整路径
+                const nameSpan = el("span", { class: "ref-name", title: fn });
+                const lastSlash = fn.lastIndexOf("/");
+                if (lastSlash >= 0) {
+                    nameSpan.appendChild(el("span", {
+                        style: "color: var(--text-muted); font-weight: 500;",
+                        text: fn.slice(0, lastSlash + 1),
+                    }));
+                    nameSpan.appendChild(el("span", { text: fn.slice(lastSlash + 1) }));
+                } else {
+                    nameSpan.textContent = fn;
+                }
+                item.appendChild(nameSpan);
                 item.appendChild(el("span", { class: "ref-size", text: `${(view.size / 1024).toFixed(1)} KB` }));
                 item.appendChild(el("button", {
                     class: "mini-link",
@@ -3004,10 +3323,13 @@ function renderSkills() {
     }
 }
 
-/** 触发参考文件上传(支持多选) */
-function triggerAddReference(skillId) {
-    const inp = $("#fileRef");
+/** 触发参考文件上传。dir=true 时弹出"选择文件夹"对话框,
+ *  浏览器会把整个目录树以单个 FileList 形式给到我们,
+ *  每个 File.webkitRelativePath 是 "<选中目录>/相对路径"。 */
+function triggerAddReference(skillId, dir = false) {
+    const inp = dir ? $("#fileRefDir") : $("#fileRef");
     inp.dataset.skillId = skillId;
+    inp.value = "";   // 复位,允许重复选择同一目录
     inp.click();
 }
 
@@ -3150,7 +3472,7 @@ function showArtifact(artifact) {
 
 function showPlaceholder() {
     const vp = $("#imageViewport");
-    vp.classList.remove("html-mode");
+    vp.classList.remove("html-mode", "svg-mode");
     vp.innerHTML = "";
     vp.appendChild(el("div", {
         class: "image-placeholder",
@@ -3173,7 +3495,8 @@ function updateHistoryNav() {
         idxLab.textContent = "—";
         prev.disabled = true;
         next.disabled = true;
-        meta.textContent = "等待 Agent 产出图像…";
+        meta.textContent = "";
+        applyExportMenuState(null);
         return;
     }
     const cur = UI.historyArtifacts[UI.currentIdx];
@@ -3184,6 +3507,21 @@ function updateHistoryNav() {
     prev.disabled = UI.currentIdx <= 0;
     next.disabled = UI.currentIdx >= UI.historyArtifacts.length - 1;
     meta.textContent = `已生成 ${UI.historyArtifacts.length} 张图${tag}`;
+    applyExportMenuState(cur);
+}
+
+/** 根据当前产出物刷新导出菜单各项的可用性与提示 */
+function applyExportMenuState(artifact) {
+    const avail = OutputRenderer.availableFormats(artifact);
+    $$("#exportMenu .export-opt").forEach(btn => {
+        const fmt = btn.getAttribute("data-fmt");
+        const a = avail[fmt] || { ok: false, reason: "" };
+        btn.disabled = !a.ok;
+        btn.title = a.reason || "";
+        // 更新二行的提示文案为 reason,这样用户不用 hover 就看到原因
+        const hint = btn.querySelector(".opt-hint");
+        if (hint) hint.textContent = a.reason || "";
+    });
 }
 
 function gotoArtifact(idx) {
@@ -3197,18 +3535,55 @@ function gotoArtifact(idx) {
 $("#btnPrevImg").onclick = () => gotoArtifact(UI.currentIdx - 1);
 $("#btnNextImg").onclick = () => gotoArtifact(UI.currentIdx + 1);
 
-$("#btnExportImg").onclick = $("#btnExportTop").onclick = () => {
-    const cur = UI.historyArtifacts[UI.currentIdx];
-    if (UI.currentIdx < 0 || !cur) {
-        showError("尚未生成任何图像。");
-        return;
-    }
-    OutputRenderer.download(cur, `figure_${Date.now()}`);
-    const msg = cur.type === "html" ? "已导出交互式 HTML"
-              : cur.type === "svg"  ? "已导出 SVG 矢量图"
-              :                       "已导出 PNG 图像";
-    showToast(msg, "success");
+/* —— 导出下拉:开/关 + 选项点击 —— */
+function toggleExportMenu(force) {
+    const menu = $("#exportMenu");
+    if (!menu) return;
+    const willOpen = (typeof force === "boolean") ? force : menu.hidden;
+    menu.hidden = !willOpen;
+}
+
+$("#btnExportImg").onclick = (e) => {
+    e.stopPropagation();
+    // 打开前先刷新一次可用性(防御性,虽然 nav 切换时已经刷过)
+    applyExportMenuState(UI.historyArtifacts[UI.currentIdx]);
+    toggleExportMenu();
 };
+
+// 菜单选项点击
+$("#exportMenu").addEventListener("click", async (e) => {
+    const btn = e.target.closest(".export-opt");
+    if (!btn || btn.disabled) return;
+    const fmt = btn.getAttribute("data-fmt");
+    const cur = UI.historyArtifacts[UI.currentIdx];
+    if (UI.currentIdx < 0 || !cur) { showError("尚未生成任何图像。"); toggleExportMenu(false); return; }
+    toggleExportMenu(false);
+    const trigger = $("#btnExportImg");
+    const original = trigger.textContent;
+    try {
+        trigger.disabled = true;
+        if (cur.type === "svg" && fmt === "png") trigger.textContent = "光栅化中…";
+        else trigger.textContent = "导出中…";
+        await OutputRenderer.exportAs(cur, fmt, `figure_${Date.now()}`);
+        showToast(`已导出 ${fmt.toUpperCase()}`, "success");
+    } catch (err) {
+        showError("导出失败:" + (err.message || err));
+    } finally {
+        trigger.disabled = false;
+        trigger.textContent = original;
+    }
+});
+
+// 点空白处关菜单
+document.addEventListener("click", (e) => {
+    const menu = $("#exportMenu");
+    if (!menu || menu.hidden) return;
+    if (e.target.closest(".export-dropdown")) return;
+    toggleExportMenu(false);
+});
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") toggleExportMenu(false);
+});
 
 $("#btnCopyCode").onclick = async () => {
     try {
@@ -3364,7 +3739,7 @@ function onAgentStep(step) {
 
 
 /* ============== 数据导入 ============== */
-$("#btnImportFile").onclick = $("#btnImportTop").onclick = () => $("#fileData").click();
+$("#btnImportFile").onclick = () => $("#fileData").click();
 $("#fileData").addEventListener("change", async (e) => {
     const f = e.target.files[0];
     if (!f) return;
@@ -3487,48 +3862,180 @@ function afterDataLoaded() {
 }
 
 
-/* ============== 添加 Skill 文件 ============== */
-$("#btnAddSkill").onclick = () => $("#fileSkill").click();
-$("#fileSkill").addEventListener("change", async (e) => {
-    const f = e.target.files[0];
-    if (!f) return;
+/* ============== 添加 Skill 文件夹 ==============
+ * 用户选一个目录,我们扫描里面所有 File:
+ *   - 任意层级如果出现 SKILL.md(大小写不敏感),那个目录就是一个 Skill 根。
+ *   - 该 Skill 根目录下的其他文件(除 SKILL.md 外)全部作为 references 自动塞入。
+ *   - references 的 key 用"相对 Skill 根"的路径,这样不同 Skill 之间不会路径串味。
+ *   - 一次操作可以同时识别多个 Skill(用户选的目录里嵌套多个 SKILL.md)。
+ */
+$("#btnAddSkillDir").onclick = () => {
+    $("#fileSkillDir").value = "";
+    $("#fileSkillDir").click();
+};
+$("#fileSkillDir").addEventListener("change", async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) { e.target.value = ""; return; }
     try {
-        const text = await f.text();
-        const sk = Skills.addFromText(text, f.name);
-        renderSkills();
-        postSystem("已加载技能:" + sk.name);
+        await ingestSkillFolder(files);
     } catch (err) {
-        showError("加载失败:" + err.message);
+        showError("导入失败:" + (err.message || err));
     } finally {
         e.target.value = "";
     }
 });
 
-/* ============== 添加 参考模板文件(多选,支持 SVG / HTML) ============== */
-$("#fileRef").addEventListener("change", async (e) => {
-    const skillId = e.target.dataset.skillId;
-    const files = Array.from(e.target.files || []);
-    if (!skillId || !files.length) { e.target.value = ""; return; }
-    let ok = 0, svgCount = 0, htmlCount = 0;
+/** 主流程:把一组 File(来自 webkitdirectory)整理成若干 Skill。
+ *  files 里每个 File 都有 webkitRelativePath,例如:
+ *    "my-skills/charts/SKILL.md"
+ *    "my-skills/charts/bar/template.html"
+ *    "my-skills/charts/line/template.html"
+ *    "my-skills/diagrams/SKILL.md"
+ *    "my-skills/diagrams/flow.svg"
+ *  我们要识别出两个 Skill 根:
+ *    "my-skills/charts"   -> references: bar/template.html, line/template.html
+ *    "my-skills/diagrams" -> references: flow.svg
+ */
+async function ingestSkillFolder(files) {
+    // 1) 找出所有 SKILL.md 的位置(目录前缀)
+    const skillDirs = [];   // [{dir: "my-skills/charts", skillFile: File}]
     for (const f of files) {
+        const p = (f.webkitRelativePath || f.name).replace(/\\/g, "/");
+        const base = p.split("/").pop().toLowerCase();
+        if (base === "skill.md") {
+            const dir = p.slice(0, p.length - "/SKILL.md".length); // 保留大小写不重要,我们只用作前缀
+            // 但实际路径段大小写可能不同,这里用真实路径段:
+            const realDir = p.slice(0, p.length - p.split("/").pop().length - 1);
+            skillDirs.push({ dir: realDir, skillFile: f });
+        }
+    }
+    if (skillDirs.length === 0) {
+        showError("没有在所选文件夹里找到 SKILL.md。请选一个含 SKILL.md 的目录(或其父目录)。");
+        return;
+    }
+
+    // 2) 把 skillDirs 按路径深度从深到浅排序;这样判断一个文件归属时,
+    //    选择"最长前缀匹配"的 Skill 根,避免父目录吞掉子目录里的 Skill 的文件。
+    skillDirs.sort((a, b) => b.dir.length - a.dir.length);
+
+    // 3) 为每个 Skill 创建 / 更新对象,准备一个 refs 集合
+    const skillInfo = [];   // [{dir, sk, addedRefs:0, skippedRefs:0, svgCount, htmlCount}]
+    for (const { dir, skillFile } of skillDirs) {
+        try {
+            const text = await skillFile.text();
+            // 用"目录名"作为 source_name,这样不同目录的 SKILL.md 不会被旧的"基本名相同就覆盖"逻辑误并
+            const tail = dir.split("/").pop() || "skill";
+            const sourceName = `${tail}/SKILL.md`;
+            const sk = Skills.addFromText(text, sourceName);
+            skillInfo.push({ dir, sk, addedRefs: 0, skippedRefs: 0, svgCount: 0, htmlCount: 0 });
+        } catch (err) {
+            showError(`读取 SKILL.md 失败 (${dir}):` + err.message);
+        }
+    }
+
+    // 4) 遍历所有文件,把非 SKILL.md 的文件按"最长前缀匹配"挂到对应 Skill 上
+    for (const f of files) {
+        const p = (f.webkitRelativePath || f.name).replace(/\\/g, "/");
+        const base = p.split("/").pop();
+        if (base.toLowerCase() === "skill.md") continue;   // 跳过 Skill 主文件本身
+        const ext = (base.split(".").pop() || "").toLowerCase();
+        // 找最长前缀匹配的 Skill
+        const owner = skillInfo.find(s => p.startsWith(s.dir + "/"));
+        if (!owner) continue;   // 不归属任何 Skill 根(例如选的根目录里直接堆的杂物)
+
+        if (!REF_ALLOWED_EXT.has(ext)) { owner.skippedRefs++; continue; }
         try {
             const text = await f.text();
-            Skills.addReference(skillId, f.name, text);
-            if (FileType.isHtml(f.name, text)) htmlCount++;
-            else if (FileType.isSvg(f.name, text)) svgCount++;
+            const relKey = p.slice(owner.dir.length + 1);   // 去掉"<skill_root>/"前缀
+            Skills.addReference(owner.sk.id, relKey, text);
+            if (FileType.isHtml(relKey, text)) owner.htmlCount++;
+            else if (FileType.isSvg(relKey, text)) owner.svgCount++;
+            owner.addedRefs++;
+        } catch (err) {
+            showError(`读取 ${p} 失败:` + err.message);
+        }
+    }
+
+    renderSkills();
+
+    // 5) 汇总反馈
+    if (skillInfo.length === 1) {
+        const s = skillInfo[0];
+        const parts = [];
+        if (s.htmlCount) parts.push(`${s.htmlCount} 份 HTML`);
+        if (s.svgCount)  parts.push(`${s.svgCount} 份 SVG`);
+        const note = parts.length ? `(含 ${parts.join("、")})` : "";
+        const skip = s.skippedRefs ? `,跳过 ${s.skippedRefs} 个不支持的文件` : "";
+        postSystem(`已导入技能「${s.sk.name}」,自动绑定 ${s.addedRefs} 份参考模板${note}${skip}。`);
+    } else {
+        const lines = skillInfo.map(s => {
+            const parts = [];
+            if (s.htmlCount) parts.push(`${s.htmlCount} HTML`);
+            if (s.svgCount)  parts.push(`${s.svgCount} SVG`);
+            const tag = parts.length ? `(${parts.join("、")})` : "";
+            return `  · ${s.sk.name}: ${s.addedRefs} 份参考模板${tag}`;
+        });
+        postSystem(`已导入 ${skillInfo.length} 个技能:\n${lines.join("\n")}`);
+    }
+}
+
+/* ============== 添加 参考模板文件(支持文件多选 / 整文件夹) ============== */
+// 允许导入的扩展;文件夹模式下用来过滤掉 .DS_Store / 图片 / 大二进制等
+const REF_ALLOWED_EXT = new Set([
+    "md", "markdown", "txt", "svg", "py", "json", "html", "htm",
+]);
+
+/** 把一批 File 写到指定 skill。fromDir=true 时优先用 webkitRelativePath 做 key,
+ *  这样 charts/bar/template.html 与 charts/line/template.html 不会互相覆盖。 */
+async function ingestReferenceFiles(skillId, files, fromDir) {
+    if (!skillId || !files.length) return;
+    let ok = 0, svgCount = 0, htmlCount = 0, skipped = 0;
+    const overwrites = [];
+    for (const f of files) {
+        const ext = (f.name.split(".").pop() || "").toLowerCase();
+        if (fromDir && !REF_ALLOWED_EXT.has(ext)) { skipped++; continue; }
+        // 选 key:文件夹模式优先用 webkitRelativePath,文件模式用裸名
+        let key = f.webkitRelativePath && fromDir ? f.webkitRelativePath : f.name;
+        try {
+            const text = await f.text();
+            // 检测一下是不是会覆盖已有 key(同 Skill 内)
+            const sk = Skills.list.find(s => s.id === skillId);
+            if (sk && sk.references && Object.prototype.hasOwnProperty.call(sk.references, Skills._normalizeRefPath(key))) {
+                overwrites.push(key);
+            }
+            Skills.addReference(skillId, key, text);
+            if (FileType.isHtml(key, text)) htmlCount++;
+            else if (FileType.isSvg(key, text)) svgCount++;
             ok++;
         } catch (err) {
-            showError(`加载 ${f.name} 失败:${err.message}`);
+            showError(`加载 ${key} 失败:${err.message}`);
         }
     }
     renderSkills();
+    const parts = [];
+    if (htmlCount) parts.push(`${htmlCount} 份 HTML 交互图模板`);
+    if (svgCount)  parts.push(`${svgCount} 份 SVG 图形模板`);
+    const note = parts.length ? `(含 ${parts.join("、")})` : "";
+    const skipNote = skipped ? `,跳过 ${skipped} 个不支持的文件` : "";
+    const owNote = overwrites.length ? `;覆盖了 ${overwrites.length} 个同路径已有模板` : "";
     if (ok) {
-        const parts = [];
-        if (htmlCount) parts.push(`${htmlCount} 份 HTML 交互图模板`);
-        if (svgCount)  parts.push(`${svgCount} 份 SVG 图形模板`);
-        const note = parts.length ? `(含 ${parts.join("、")})` : "";
-        postSystem(`已加载 ${ok} 个参考模板文件${note},Agent 现在可以按需读取它们。`);
+        postSystem(`已加载 ${ok} 个参考模板${note}${skipNote}${owNote}。`);
+    } else if (skipped) {
+        postSystem(`未加载任何模板:跳过了 ${skipped} 个不支持的文件。`);
     }
+}
+
+$("#fileRef").addEventListener("change", async (e) => {
+    const skillId = e.target.dataset.skillId;
+    const files = Array.from(e.target.files || []);
+    await ingestReferenceFiles(skillId, files, /*fromDir*/ false);
+    e.target.value = "";
+});
+
+$("#fileRefDir").addEventListener("change", async (e) => {
+    const skillId = e.target.dataset.skillId;
+    const files = Array.from(e.target.files || []);
+    await ingestReferenceFiles(skillId, files, /*fromDir*/ true);
     e.target.value = "";
 });
 
@@ -3608,7 +4115,7 @@ function bootstrap() {
     updateHistoryNav();
     updateModelBadge();
 
-    postSystem('欢迎使用 SciFigure Agent Studio。请先点击「模型配置」填入 API Key,然后导入数据。现在支持三类产出:位图(PNG) / 矢量图(SVG) / 交互式 HTML 图表 —— 你也可以在左栏给任意技能上传 .html 作为交互图风格模板。');
+    postSystem('欢迎使用 miniAgent。请先点击「模型配置」填入 API Key,然后导入数据。现在支持三类产出:位图(PNG) / 矢量图(SVG) / 交互式 HTML 图表 —— 你也可以在左栏给任意技能上传 .html 作为交互图风格模板。');
 }
 
 bootstrap();

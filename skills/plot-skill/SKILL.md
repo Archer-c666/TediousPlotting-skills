@@ -1,6 +1,6 @@
 ---
 name: Plot Skill
-description: A professional scientific plotting skill that includes various common chart visualizations such as scatter plots, bar charts, line charts, box plots, violin plots, histograms, density curves, heatmaps, pie charts, radar charts, 3D surface plots, field plots, joy plots, ROC curves, confusion matrices, error/uncertainty plots, and flow/relationship diagrams. Use this skill when the user provides data and wants to perform analysis, variation, distribution, comparison, or trend visualization, and needs you to create high-quality charts. This skill strictly follows fixed scientific color schemes and font specifications, and performs self-checks before output, producing visualization charts that meet journal submission quality standards.
+description: A professional scientific plotting skill that includes various common chart visualizations such as scatter/bar/line/box/violin/histograms/density curves/heatmaps/pie/3D/joy/ROC/confusion matrices/error plots,Use this skill when the user provides data and wants to perform analysis, variation, distribution, comparison, or trend visualization, and needs you to create high-quality charts. This skill strictly follows fixed scientific color schemes and font specifications, and performs self-checks before output, producing visualization charts that meet journal submission quality standards.
 ---
 ### Important Rules!
 
@@ -69,7 +69,7 @@ plt.rcParams.update({
 | Pie charts, heatmaps, 3D surface plots and other square charts                      | `(8, 8)` to `(16, 16)`                         |
 | Multi-subplot charts                                                                | Based on subplot count `(12, 5)` to `(22, 15)` |
 
-**Common scientific visualization colors are listed below. Select from the following based on actual situation; do not arbitrarily use other colors:**
+**Common scientific visualization colors are listed below. Select from the following based on actual situation; do not arbitrarily use other colors.**
 
 **Categorical colors:**
 
@@ -84,6 +84,32 @@ colors = ['#2E86AB', '#A23B72', '#F18F01', '#C73E1D',"#649fca", "#c68f5f", "#63b
 `'RdBu_r'`, `'coolwarm'`, `'PuOr_r'`. Be sure to center the color scale at a meaningful midpoint, using `vmin=-v, vmax=v` or `TwoSlopeNorm`
 
 ---
+
+### Chart Selection Quick Table
+
+Use this table to quickly pick a default chart type from the **shape of the user's data**. If the user already specified a chart type, skip this table. After picking a chart type here, consult the **Reference Template Python** table below to find which template file to open for style details.
+
+| Data Shape / Goal                                | Default Chart                         | Alternatives                        |
+| ------------------------------------------------ | ------------------------------------- | ----------------------------------- |
+| Single continuous variable, distribution         | Histogram + KDE overlay               | Box plot, violin plot               |
+| Two continuous variables, relationship           | Scatter (+ regression / trendline)    | Hexbin, 2D KDE                      |
+| Category × continuous, few categories (≤5)     | Grouped bar chart                     | Dot plot, grouped box               |
+| Category × continuous, many categories (≥6)    | Box plot or violin plot               | Joy / ridgeline plot                |
+| Stacked distributions across groups / time       | Joy / ridgeline plot                  | Small-multiples histograms          |
+| Matrix / pairwise correlation                    | Heatmap (diverging colormap)          | Clustered heatmap                   |
+| Time series, single or few lines                 | Line chart                            | Area chart, line + uncertainty band |
+| Time series with uncertainty                     | Line + shaded confidence band         | Error bars                          |
+| Proportion / composition (≤3 parts)             | Pie chart                             | Horizontal stacked bar              |
+| Proportion / composition (≥4 parts)             | Horizontal bar / stacked bar          | Treemap                             |
+| Multi-dimensional feature comparison (3–8 axes) | Radar / spider chart                  | Parallel coordinates                |
+| Classifier evaluation — threshold-dependent     | ROC curve (+ AUC)                     | Precision-Recall curve              |
+| Classifier evaluation — class-wise errors       | Confusion matrix                      | Normalized confusion matrix         |
+| 3D surface / two inputs → one output            | 3D surface plot                       | Contour + heatmap combo             |
+| Vector / scalar field over 2D space              | Quiver / streamplot / contourf        | Heatmap overlay                     |
+| Model residuals / signed errors near zero        | Diverging heatmap or residual scatter | Error bar plot                      |
+| Ranking / sorted comparison                      | Horizontal bar (sorted)               | Lollipop plot                       |
+
+If the user's situation doesn't match any row, pick the closest one and adapt.
 
 ### Reference Template Python
 
