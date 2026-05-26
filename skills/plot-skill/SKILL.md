@@ -1,5 +1,5 @@
 ---
-name: Plot Skill
+name: plot-skill
 description: A professional scientific plotting skill that includes various common chart visualizations such as scatter/bar/line/box/violin/histograms/density curves/heatmaps/pie/3D/joy/ROC/confusion matrices/error plots,Use this skill when the user provides data and wants to perform analysis, variation, distribution, comparison, or trend visualization, and needs you to create high-quality charts. This skill strictly follows fixed scientific color schemes and font specifications, and performs self-checks before output, producing visualization charts that meet journal submission quality standards.
 ---
 ### Important Rules!
@@ -113,11 +113,11 @@ If the user's situation doesn't match any row, pick the closest one and adapt.
 
 ### Reference Template Python
 
-|                              Reference File                              | Chart Type                                                                                                                   | When to Open                                                                                                                                                  |
-| :----------------------------------------------------------------------: | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-|       [references/scatter_bar_line_box.md](reference\bar_line_box.md)       | Scatter plots, bar charts, line charts, box plots and their variants and composite charts                                    | When user needs involve time/category trends, inter-group comparison, distribution, scatter correlation                                                       |
-| [references/heat_pie_histogram_radart.md](reference\scatter_violin_heat.md) | Pie charts, histograms, KDE density curves, radar charts, heatmaps and their variants and composite charts                   | When user needs involve matrix/correlation data, univariate distribution, proportion, multi-axis feature comparison                                           |
-|  [references/3Dplot_joy_ROC_flow_error.md](reference\3Dsurface_joy_ROC.md)  | 3D surfaces, 2D field plots, joy plots, confusion matrices, ROC curves ,Time series and their variants and composite charts | When user needs involve 3D structure, vector/scalar fields, stacked distributions, classifier evaluation, time analyse, uncertainty bands, model diagnostics |
+|                             Reference File                             | Chart Type                                                                                                                   | When to Open                                                                                                                                                  |
+| :--------------------------------------------------------------------: | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|      [scatter_bar_line_box.md](./references/scatter_bar_line_box.md)      | Scatter plots, bar charts, line charts, box plots and their variants and composite charts                                    | When user needs involve time/category trends, inter-group comparison, distribution, scatter correlation                                                       |
+| [heat_pie_histogram_radart.md](./references/heat_pie_histogram_radar.md) | Pie charts, histograms, KDE density curves, radar charts, heatmaps and their variants and composite charts                   | When user needs involve matrix/correlation data, univariate distribution, proportion, multi-axis feature comparison                                           |
+| [3Dplot_joy_ROC_flow_error.md](./references/3Dplot_joy_ROC_flow_error.md) | 3D surfaces, 2D field plots, joy plots, confusion matrices, ROC curves ,Time series and their variants and composite charts | When user needs involve 3D structure, vector/scalar fields, stacked distributions, classifier evaluation, time analyse, uncertainty bands, model diagnostics |
 
 If the requirements span multiple files, you can open them all.
 
