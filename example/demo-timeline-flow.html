@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Timeline Flow · Project Atlas — H1 2024</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,800&family=JetBrains+Mono:wght@300;400;500&family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  :root{
+    --bg-0:#0b0d12; --bg-1:#11141b; --bg-2:#181c25;
+    --line:rgba(255,255,255,0.08); --line-2:rgba(255,255,255,0.16);
+    --ink:#ecedef; --ink-dim:#9aa0aa; --ink-mute:#5b6068;
+    --accent:#f0c674; --accent-2:#e36a4a;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%; background:var(--bg-0); color:var(--ink); font-family:'Inter Tight', sans-serif; overflow-x:hidden;}
+  body::before{content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background:
+      radial-gradient(800px 600px at 18% 12%, rgba(240,198,116,.06), transparent 60%),
+      radial-gradient(900px 700px at 85% 88%, rgba(227,106,74,.05), transparent 60%);}
+  body::after{content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.35;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    mix-blend-mode:overlay;}
+
+  .frame{position:relative; z-index:1; max-width:1400px; margin:0 auto; padding:48px 56px 64px;}
+  header.title{display:grid; grid-template-columns:1fr auto; align-items:end; gap:48px; padding-bottom:28px; margin-bottom:28px; border-bottom:1px solid var(--line);}
+  .eyebrow{font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.28em; text-transform:uppercase; color:var(--ink-mute); display:flex; align-items:center; gap:12px;}
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--accent); box-shadow:0 0 12px var(--accent);}
+  h1{font-family:'Fraunces', serif; font-weight:300; font-size:clamp(38px, 4.4vw, 64px); line-height:1.02; letter-spacing:-.02em; margin-top:14px;}
+  h1 em{font-style:italic; font-weight:400; color:var(--accent);}
+  .lede{margin-top:14px; max-width:540px; color:var(--ink-dim); font-size:14px; line-height:1.55;}
+  .meta{text-align:right; font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--ink-mute); letter-spacing:.12em; line-height:1.9;}
+  .meta b{color:var(--ink); font-weight:500;}
+
+  /* 类别图例 + 重置按钮 */
+  .toolbar{display:flex; align-items:center; justify-content:space-between; gap:24px; padding:12px 16px; margin-bottom:18px; background:var(--bg-1); border:1px solid var(--line); flex-wrap:wrap;}
+  .category-legend{display:flex; align-items:center; gap:18px; font-family:'JetBrains Mono', monospace; font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-dim); flex-wrap:wrap;}
+  .legend-chip{display:flex; align-items:center; gap:8px; cursor:pointer; padding:4px 10px; border:1px solid transparent; transition: all .2s;}
+  .legend-chip:hover{border-color:var(--line-2);}
+  .legend-chip.muted{opacity:.35;}
+  .legend-chip .sw{width:14px; height:10px; border-radius:1px;}
+  .reset-zoom{background:var(--bg-2); border:1px solid var(--line-2); color:var(--ink-dim); padding:6px 14px; cursor:pointer; font-family:'JetBrains Mono', monospace; font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; transition: all .2s;}
+  .reset-zoom:hover{background:var(--accent); color:var(--bg-0); border-color:var(--accent);}
+
+  /* 主舞台 */
+  .stage{display:grid; grid-template-columns: 1fr 280px; gap:28px; align-items:start;}
+  .chart-wrap{position:relative; background:var(--bg-1); border:1px solid var(--line); padding:20px;}
+  .chart-wrap svg{width:100%; height:auto; display:block; overflow:visible;}
+
+  .event-block{cursor:pointer; transition: opacity .25s ease;}
+  .event-block rect{transition: filter .2s, stroke .2s;}
+  .event-block:hover rect{filter: brightness(1.2) saturate(1.1); stroke:var(--ink);}
+  .event-block.dim{opacity:.18;}
+  .event-block.glow rect{stroke:var(--accent); stroke-width:2;}
+  .event-label{font-family:'Inter Tight', sans-serif; font-size:10.5px; font-weight:500; fill:rgba(11,13,18,.92); pointer-events:none;}
+
+  .channel-label{font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.12em; fill:var(--ink-dim); cursor:pointer; transition: fill .2s;}
+  .channel-label:hover{fill:var(--accent);}
+  .channel-label.active{fill:var(--accent); font-weight:500;}
+  .channel-divider{stroke:var(--line); stroke-width:0.5;}
+  .channel-row-bg{fill:transparent; transition: fill .2s;}
+  .channel-row-bg.active{fill:rgba(240,198,116,0.04);}
+
+  .axis-time text{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.08em; fill:var(--ink-mute);}
+  .axis-time line, .axis-time path{stroke:var(--line); stroke-width:0.5;}
+  .now-line{stroke:var(--accent-2); stroke-width:1.5; stroke-dasharray:3,3; opacity:0.7;}
+  .now-label{font-family:'JetBrains Mono', monospace; font-size:9.5px; letter-spacing:.16em; fill:var(--accent-2); text-transform:uppercase;}
+
+  /* 概览条 —— 底部小型缩放滑块 */
+  .overview{margin-top:12px; padding:12px 16px; background:var(--bg-1); border:1px solid var(--line);}
+  .overview svg{width:100%; height:60px; display:block;}
+  .overview-event{fill:var(--ink-mute); opacity:0.5;}
+  .brush .selection{fill:var(--accent); fill-opacity:0.15; stroke:var(--accent); stroke-width:1;}
+  .brush .handle{fill:var(--accent);}
+
+  /* 详情面板 */
+  .panel-detail{padding:20px 18px; background:linear-gradient(180deg, var(--bg-1), rgba(17,20,27,0)); border:1px solid var(--line);}
+  .panel-detail h3{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.28em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:12px;}
+  .panel-detail .name{font-family:'Fraunces', serif; font-weight:400; font-size:22px; line-height:1.2; margin-bottom:6px;}
+  .panel-detail .path{font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-mute); letter-spacing:.15em; margin-bottom:16px; text-transform:uppercase;}
+  .stat-row{display:flex; justify-content:space-between; align-items:baseline; padding:14px 0; border-bottom:1px solid var(--line);}
+  .stat-row .k{font-size:11px; color:var(--ink-mute); letter-spacing:.1em; text-transform:uppercase; font-family:'JetBrains Mono', monospace;}
+  .stat-row .v{font-family:'Fraunces', serif; font-weight:300; font-size:20px; text-align:right; font-variant-numeric:tabular-nums;}
+  .stat-row .v small{font-size:11px; font-family:'JetBrains Mono', monospace; color:var(--ink-mute); margin-left:4px;}
+
+  .summary-block{margin-top:20px; padding:14px; background:var(--bg-2); border:1px solid var(--line);}
+  .summary-block h4{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.22em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:10px;}
+  .summary-row{display:flex; justify-content:space-between; align-items:center; padding:5px 0; font-size:11px; font-family:'JetBrains Mono', monospace;}
+  .summary-row .sk{color:var(--ink-mute); letter-spacing:.08em; display:flex; align-items:center; gap:8px;}
+  .summary-row .sw{width:10px; height:10px; border-radius:1px;}
+  .summary-row .sv{color:var(--ink); font-variant-numeric:tabular-nums;}
+
+  .controls{margin-top:22px; padding-top:18px; border-top:1px solid var(--line);}
+  .ctrl{display:flex; justify-content:space-between; padding:8px 0; font-size:11px; color:var(--ink-dim); font-family:'JetBrains Mono', monospace; letter-spacing:.08em;}
+  .ctrl kbd{background:var(--bg-2); border:1px solid var(--line-2); padding:2px 6px; border-radius:2px; color:var(--ink); font-family:'JetBrains Mono', monospace; font-size:10px;}
+
+  .tip{position:fixed; pointer-events:none; z-index:99; background:rgba(17,20,27,.96); border:1px solid var(--line-2); padding:12px 16px; min-width:220px; max-width:300px; font-size:12px; box-shadow:0 20px 40px rgba(0,0,0,.4); backdrop-filter: blur(8px); opacity:0; transform: translateY(4px); transition: opacity .15s, transform .15s;}
+  .tip.on{opacity:1; transform:translateY(0);}
+  .tip .tname{font-family:'Fraunces', serif; font-size:16px; margin-bottom:4px; line-height:1.2;}
+  .tip .tpath{font-family:'JetBrains Mono', monospace; font-size:9.5px; color:var(--ink-mute); letter-spacing:.12em; margin-bottom:8px; text-transform:uppercase;}
+  .tip .trow{display:flex; justify-content:space-between; gap:18px; font-family:'JetBrains Mono', monospace; font-size:11px; padding:2px 0;}
+  .tip .trow .tk{color:var(--ink-mute);}
+  .tip .trow .tv{font-variant-numeric:tabular-nums;}
+  .tip .tbar{width:100%; height:2px; margin-top:8px;}
+
+  @media (max-width: 1100px){
+    .stage{grid-template-columns:1fr;}
+    .frame{padding:32px 24px;}
+    header.title{grid-template-columns:1fr;}
+    .meta{text-align:left;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{animation-duration:.01ms !important; transition-duration:.01ms !important;}
+  }
+</style>
+</head>
+<body>
+<div class="frame">
+  <header class="title">
+    <div>
+      <div class="eyebrow"><span class="dot"></span> IDIOM · TIMELINE FLOW · PROJECT PLAN</div>
+      <h1>半年的 <em>并行轨迹</em><br>——五个角色，四类工作。</h1>
+      <p class="lede">每条横线是一位贡献者。颜色编码工作类型，长度编码持续时间。拖底部缩放，点图例过滤。</p>
+    </div>
+    <div class="meta">
+      <b>Project Atlas</b> &nbsp; / &nbsp; Operations<br>
+      Dataset · Synthetic / Jan–Jun 2024<br>
+      Idiom · <b>Timeline Flow</b> &nbsp; / &nbsp; Marks · event bars
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="category-legend" id="catLegend"></div>
+    <button class="reset-zoom" id="resetBtn">Reset zoom</button>
+  </div>
+
+  <div class="stage">
+    <div>
+      <div class="chart-wrap">
+        <svg id="chart" role="img" aria-label="多通道事件时间线"></svg>
+      </div>
+      <div class="overview">
+        <svg id="overview"></svg>
+      </div>
+    </div>
+
+    <aside class="panel-detail" aria-live="polite">
+      <h3>Selection</h3>
+      <div class="name" id="dname">Atlas H1</div>
+      <div class="path" id="dpath">— overview —</div>
+      <div class="stat-row"><span class="k">Duration</span><span class="v" id="dur">—<small>days</small></span></div>
+      <div class="stat-row"><span class="k">Start</span><span class="v" id="dstart">—</span></div>
+      <div class="stat-row"><span class="k">End</span><span class="v" id="dend">—</span></div>
+
+      <div class="summary-block">
+        <h4>Channels in view</h4>
+        <div id="channelSummary"></div>
+      </div>
+
+      <div class="controls">
+        <div class="ctrl"><span>Inspect event</span><kbd>Hover</kbd></div>
+        <div class="ctrl"><span>Zoom range</span><kbd>Brush below</kbd></div>
+        <div class="ctrl"><span>Filter category</span><kbd>Click chip</kbd></div>
+        <div class="ctrl"><span>Reset</span><kbd>Reset zoom</kbd></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="tip" id="tip">
+  <div class="tname"></div>
+  <div class="tpath"></div>
+  <div class="trow"><span class="tk">Start</span><span class="tv tv-start"></span></div>
+  <div class="trow"><span class="tk">End</span><span class="tv tv-end"></span></div>
+  <div class="trow"><span class="tk">Duration</span><span class="tv tv-dur"></span></div>
+  <div class="tbar"></div>
+</div>
+
+<script>
+// ============ 配置 ============
+const rawData = [
+  {"channel":"Alice","start":"2024-01-08","end":"2024-01-26","category":"research","label":"User interviews"},
+  {"channel":"Alice","start":"2024-01-29","end":"2024-02-16","category":"design","label":"Wireframes v1"},
+  {"channel":"Alice","start":"2024-02-19","end":"2024-03-08","category":"design","label":"Visual design"},
+  {"channel":"Alice","start":"2024-03-11","end":"2024-03-29","category":"design","label":"Design system"},
+  {"channel":"Alice","start":"2024-04-08","end":"2024-04-26","category":"design","label":"Iteration v2"},
+  {"channel":"Alice","start":"2024-05-13","end":"2024-05-24","category":"research","label":"Usability tests"},
+
+  {"channel":"Bob","start":"2024-01-15","end":"2024-02-09","category":"dev","label":"Backend API"},
+  {"channel":"Bob","start":"2024-02-12","end":"2024-03-15","category":"dev","label":"Auth + DB schema"},
+  {"channel":"Bob","start":"2024-03-18","end":"2024-04-19","category":"dev","label":"Webhook integration"},
+  {"channel":"Bob","start":"2024-04-22","end":"2024-05-10","category":"dev","label":"Performance optimization"},
+  {"channel":"Bob","start":"2024-05-13","end":"2024-05-31","category":"ops","label":"Production rollout"},
+  {"channel":"Bob","start":"2024-06-03","end":"2024-06-21","category":"ops","label":"Monitoring + alerts"},
+
+  {"channel":"Carlos","start":"2024-02-05","end":"2024-03-01","category":"dev","label":"Frontend scaffold"},
+  {"channel":"Carlos","start":"2024-03-04","end":"2024-04-12","category":"dev","label":"Component library"},
+  {"channel":"Carlos","start":"2024-04-15","end":"2024-05-17","category":"dev","label":"Feature build-out"},
+  {"channel":"Carlos","start":"2024-05-20","end":"2024-06-07","category":"dev","label":"Bug fixes + polish"},
+  {"channel":"Carlos","start":"2024-06-10","end":"2024-06-28","category":"design","label":"Onboarding flow"},
+
+  {"channel":"Diana","start":"2024-01-22","end":"2024-02-09","category":"research","label":"Market analysis"},
+  {"channel":"Diana","start":"2024-02-12","end":"2024-03-01","category":"research","label":"Competitor audit"},
+  {"channel":"Diana","start":"2024-03-04","end":"2024-04-05","category":"ops","label":"Pricing model"},
+  {"channel":"Diana","start":"2024-04-08","end":"2024-05-03","category":"ops","label":"Go-to-market plan"},
+  {"channel":"Diana","start":"2024-05-06","end":"2024-05-31","category":"ops","label":"Launch coordination"},
+  {"channel":"Diana","start":"2024-06-03","end":"2024-06-28","category":"research","label":"Post-launch analytics"},
+
+  {"channel":"Eric (QA)","start":"2024-03-25","end":"2024-04-19","category":"dev","label":"Test infrastructure"},
+  {"channel":"Eric (QA)","start":"2024-04-22","end":"2024-05-17","category":"dev","label":"E2E test suite"},
+  {"channel":"Eric (QA)","start":"2024-05-20","end":"2024-06-14","category":"dev","label":"Regression + load tests"},
+  {"channel":"Eric (QA)","start":"2024-06-17","end":"2024-06-28","category":"ops","label":"Release sign-off"}
+]
+;
+const CATEGORY_COLORS = {"design": "#b88ec2", "dev": "#6a9bd1", "research": "#7fb8a4", "ops": "#f0c674"};   // { categoryName: "#hex" }
+const NOW_DATE = "2024-04-15";        // ISO 字符串 或 null（不显示"现在"线）
+
+// ============ 数据预处理 ============
+const events = rawData.map(d => ({
+  channel: d.channel,
+  start: new Date(d.start),
+  end: new Date(d.end),
+  category: d.category || "default",
+  label: d.label || "",
+  meta: d.meta || {}
+})).filter(e => !isNaN(e.start) && !isNaN(e.end));
+
+if (events.length === 0){
+  document.getElementById("chart").innerHTML = `<text x="20" y="40" fill="#9aa0aa" font-family="JetBrains Mono" font-size="12">No events</text>`;
+}
+
+const channels = Array.from(new Set(events.map(e => e.channel)));
+const categories = Array.from(new Set(events.map(e => e.category)));
+const timeExtent = d3.extent(events.flatMap(e => [e.start, e.end]));
+const nowParsed = NOW_DATE ? new Date(NOW_DATE) : null;
+
+// 默认颜色补全：用户没指定的类别用 categorical palette 补
+const fallbackPalette = ["#e36a4a", "#f0c674", "#7fb8a4", "#c98a5b", "#b88ec2", "#6a9bd1", "#d6b85a"];
+const colorMap = {};
+categories.forEach((c, i) => {
+  colorMap[c] = CATEGORY_COLORS[c] || fallbackPalette[i % fallbackPalette.length];
+});
+
+// 类别过滤状态
+const activeCategories = new Set(categories);
+
+// ============ 主时间线渲染 ============
+const W = 1100, H = Math.max(280, channels.length * 42 + 80);
+const M = { top: 30, right: 30, bottom: 36, left: 120 };
+const innerW = W - M.left - M.right;
+const innerH = H - M.top - M.bottom;
+
+const svg = d3.select("#chart").attr("viewBox", `0 0 ${W} ${H}`).attr("preserveAspectRatio","xMidYMid meet");
+
+const xFull = d3.scaleTime().domain(timeExtent).range([0, innerW]);
+let xCurrent = xFull.copy();
+const y = d3.scaleBand().domain(channels).range([0, innerH]).padding(0.25);
+
+const root = svg.append("g").attr("transform", `translate(${M.left},${M.top})`);
+
+// 通道行背景（用于 hover 整行高亮）
+const channelBgs = root.append("g").attr("class","channel-bgs")
+  .selectAll("rect.channel-row-bg").data(channels).join("rect")
+  .attr("class","channel-row-bg")
+  .attr("x", 0).attr("y", c => y(c))
+  .attr("width", innerW).attr("height", y.bandwidth());
+
+// 分隔线
+root.append("g").attr("class","dividers")
+  .selectAll("line").data(channels).join("line")
+  .attr("class","channel-divider")
+  .attr("x1", 0).attr("x2", innerW)
+  .attr("y1", c => y(c) + y.bandwidth() + (y.step() - y.bandwidth())/2)
+  .attr("y2", c => y(c) + y.bandwidth() + (y.step() - y.bandwidth())/2);
+
+// 通道标签
+const channelLabels = svg.append("g").attr("class","channel-labels")
+  .selectAll("text").data(channels).join("text")
+  .attr("class","channel-label")
+  .attr("x", M.left - 14).attr("y", c => M.top + y(c) + y.bandwidth()/2 + 4)
+  .attr("text-anchor","end")
+  .text(c => c);
+
+// 时间轴
+const xAxisG = svg.append("g").attr("class","axis-time")
+  .attr("transform", `translate(${M.left},${M.top + innerH + 8})`);
+
+// "现在"线（如果配置了）
+const nowG = root.append("g").attr("class","now-group").style("display", nowParsed ? null : "none");
+if (nowParsed){
+  nowG.append("line").attr("class","now-line").attr("y1", -4).attr("y2", innerH + 4);
+  nowG.append("text").attr("class","now-label").attr("y", -8).attr("text-anchor","middle").text("Now");
+}
+
+// 事件块容器
+const eventsG = root.append("g").attr("class","events");
+
+function renderEvents(){
+  const visible = events.filter(e => activeCategories.has(e.category));
+
+  const blocks = eventsG.selectAll("g.event-block").data(visible, (d,i) => d.channel + "|" + d.start.getTime() + "|" + i);
+
+  blocks.exit().remove();
+
+  const enter = blocks.enter().append("g").attr("class","event-block").attr("tabindex", 0).attr("role","button");
+
+  enter.append("rect")
+    .attr("rx", 2)
+    .attr("y", e => y(e.channel))
+    .attr("height", y.bandwidth())
+    .attr("fill", e => colorMap[e.category])
+    .attr("opacity", 0.92)
+    .attr("stroke", "var(--bg-0)").attr("stroke-width", 0.5);
+
+  enter.append("text").attr("class","event-label").attr("y", e => y(e.channel) + y.bandwidth()/2 + 4);
+
+  enter.on("mouseenter", function(event, d){
+    eventsG.selectAll("g.event-block").classed("dim", e => e !== d);
+    d3.select(this).classed("glow", true).classed("dim", false);
+    channelLabels.classed("active", c => c === d.channel);
+    channelBgs.classed("active", c => c === d.channel);
+    showTip(event, d);
+    updateDetail(d);
+  })
+  .on("mousemove", e => {
+    tip.style("left", (e.clientX + 18) + "px").style("top", (e.clientY + 18) + "px");
+  })
+  .on("mouseleave", () => {
+    eventsG.selectAll("g.event-block").classed("dim", false).classed("glow", false);
+    channelLabels.classed("active", false);
+    channelBgs.classed("active", false);
+    tip.classed("on", false);
+    updateDetail(null);
+  });
+
+  const all = eventsG.selectAll("g.event-block");
+
+  all.transition().duration(400).ease(d3.easeCubicOut)
+    .attr("aria-label", d => `${d.label || d.channel} from ${d3.timeFormat("%b %d")(d.start)} to ${d3.timeFormat("%b %d")(d.end)}`);
+
+  all.select("rect").transition().duration(400).ease(d3.easeCubicOut)
+    .attr("x", e => xCurrent(e.start))
+    .attr("width", e => Math.max(2, xCurrent(e.end) - xCurrent(e.start)));
+
+  all.select("text.event-label").transition().duration(400).ease(d3.easeCubicOut)
+    .attr("x", e => xCurrent(e.start) + 8)
+    .text(e => {
+      const w = xCurrent(e.end) - xCurrent(e.start);
+      const lbl = e.label || "";
+      if (w < 30) return "";
+      const maxChars = Math.floor((w - 12) / 6);
+      return lbl.length > maxChars ? lbl.slice(0, Math.max(1, maxChars - 1)) + "…" : lbl;
+    });
+
+  // 入场错峰（仅 enter 集合）
+  enter.style("opacity", 0)
+    .transition()
+    .delay((d, i) => 20 + i * 10)
+    .duration(560)
+    .ease(d3.easeCubicOut)
+    .style("opacity", 1);
+
+  // 更新"现在"线
+  if (nowParsed){
+    nowG.select("line").attr("x1", xCurrent(nowParsed)).attr("x2", xCurrent(nowParsed));
+    nowG.select("text").attr("x", xCurrent(nowParsed));
+    nowG.style("display", (nowParsed >= xCurrent.domain()[0] && nowParsed <= xCurrent.domain()[1]) ? null : "none");
+  }
+
+  // 时间轴
+  const tickCount = Math.max(3, Math.floor(innerW / 110));
+  xAxisG.transition().duration(400).call(d3.axisBottom(xCurrent).ticks(tickCount).tickSizeOuter(0));
+
+  // 详情面板的"通道概览"
+  updateChannelSummary(visible);
+}
+
+// ============ 概览刷选 ============
+const ovSvg = d3.select("#overview");
+const ovW = W, ovH = 60;
+const ovM = { top: 8, right: 30, bottom: 16, left: 120 };
+const ovInnerW = ovW - ovM.left - ovM.right;
+const ovInnerH = ovH - ovM.top - ovM.bottom;
+
+ovSvg.attr("viewBox", `0 0 ${ovW} ${ovH}`).attr("preserveAspectRatio","xMidYMid meet");
+const ovRoot = ovSvg.append("g").attr("transform", `translate(${ovM.left},${ovM.top})`);
+
+// 概览：每个事件画一根线
+const ovY = d3.scaleBand().domain(channels).range([0, ovInnerH]).padding(0.3);
+ovRoot.selectAll("rect.overview-event").data(events).join("rect")
+  .attr("class","overview-event")
+  .attr("x", e => xFull(e.start))
+  .attr("width", e => Math.max(1, xFull(e.end) - xFull(e.start)))
+  .attr("y", e => ovY(e.channel))
+  .attr("height", Math.max(1, ovY.bandwidth()))
+  .attr("fill", e => colorMap[e.category])
+  .attr("opacity", 0.55);
+
+const ovAxis = ovSvg.append("g").attr("transform", `translate(${ovM.left},${ovM.top + ovInnerH + 2})`)
+  .attr("class","axis-time")
+  .call(d3.axisBottom(xFull).ticks(6).tickSizeOuter(0));
+
+const brush = d3.brushX()
+  .extent([[0, 0], [ovInnerW, ovInnerH]])
+  .on("brush end", brushed);
+
+const brushG = ovRoot.append("g").attr("class","brush").call(brush);
+
+function brushed(event){
+  if (!event.sourceEvent) return;
+  if (!event.selection){
+    xCurrent = xFull.copy();
+  } else {
+    const [x0, x1] = event.selection;
+    xCurrent = xFull.copy().domain([xFull.invert(x0), xFull.invert(x1)]);
+  }
+  renderEvents();
+}
+
+d3.select("#resetBtn").on("click", () => {
+  brushG.call(brush.move, null);
+  xCurrent = xFull.copy();
+  renderEvents();
+});
+
+// ============ 类别图例 ============
+const catLegend = d3.select("#catLegend");
+categories.forEach(cat => {
+  const chip = catLegend.append("div").attr("class","legend-chip").attr("data-cat", cat);
+  chip.append("div").attr("class","sw").style("background", colorMap[cat]);
+  chip.append("span").text(cat);
+  chip.on("click", function(){
+    if (activeCategories.has(cat)){
+      if (activeCategories.size === 1){
+        // 当前只剩一个类别时，点击会"翻转"：取消该类，启用其他所有类
+        activeCategories.clear();
+        categories.forEach(c => { if (c !== cat) activeCategories.add(c); });
+      } else {
+        activeCategories.delete(cat);
+      }
+    } else {
+      activeCategories.add(cat);
+    }
+    catLegend.selectAll(".legend-chip").classed("muted", function(){
+      return !activeCategories.has(d3.select(this).attr("data-cat"));
+    });
+    renderEvents();
+  });
+});
+
+// 通道标签 hover —— 整行高亮
+channelLabels.on("mouseenter", function(event, ch){
+  eventsG.selectAll("g.event-block").classed("dim", e => e.channel !== ch);
+  d3.select(this).classed("active", true);
+  channelBgs.classed("active", c => c === ch);
+  updateChannelDetail(ch);
+})
+.on("mouseleave", function(){
+  eventsG.selectAll("g.event-block").classed("dim", false);
+  d3.select(this).classed("active", false);
+  channelBgs.classed("active", false);
+  updateDetail(null);
+});
+
+// ============ tooltip & 详情 ============
+const tip = d3.select("#tip");
+function showTip(event, d){
+  tip.select(".tname").text(d.label || d.channel);
+  tip.select(".tpath").text(d.channel + " · " + d.category);
+  tip.select(".tv-start").text(d3.timeFormat("%b %d, %Y")(d.start));
+  tip.select(".tv-end").text(d3.timeFormat("%b %d, %Y")(d.end));
+  const days = Math.round((d.end - d.start) / 86400000);
+  tip.select(".tv-dur").text(days + " day" + (days !== 1 ? "s" : ""));
+  tip.select(".tbar").style("background", colorMap[d.category]);
+  tip.classed("on", true);
+}
+
+function updateDetail(d){
+  if (d === null){
+    const visible = events.filter(e => activeCategories.has(e.category));
+    d3.select("#dname").text(visible.length + " events");
+    d3.select("#dpath").text("— total in view —");
+    if (visible.length){
+      const ext = d3.extent(visible.flatMap(e => [e.start, e.end]));
+      const totalDays = Math.round((ext[1] - ext[0]) / 86400000);
+      d3.select("#dur").html(totalDays + "<small>days span</small>");
+      d3.select("#dstart").text(d3.timeFormat("%b %d, %Y")(ext[0]));
+      d3.select("#dend").text(d3.timeFormat("%b %d, %Y")(ext[1]));
+    } else {
+      d3.select("#dur").html("—<small>days</small>");
+      d3.select("#dstart").text("—");
+      d3.select("#dend").text("—");
+    }
+    return;
+  }
+  d3.select("#dname").text(d.label || "(unnamed)");
+  d3.select("#dpath").text(d.channel + " · " + d.category);
+  const days = Math.round((d.end - d.start) / 86400000);
+  d3.select("#dur").html(days + "<small>days</small>");
+  d3.select("#dstart").text(d3.timeFormat("%b %d, %Y")(d.start));
+  d3.select("#dend").text(d3.timeFormat("%b %d, %Y")(d.end));
+}
+
+function updateChannelDetail(ch){
+  const chEvents = events.filter(e => e.channel === ch && activeCategories.has(e.category));
+  d3.select("#dname").text(ch);
+  d3.select("#dpath").text("Channel · " + chEvents.length + " events");
+  if (chEvents.length){
+    const totalDays = chEvents.reduce((s, e) => s + (e.end - e.start), 0) / 86400000;
+    d3.select("#dur").html(Math.round(totalDays) + "<small>active days</small>");
+    const ext = d3.extent(chEvents.flatMap(e => [e.start, e.end]));
+    d3.select("#dstart").text(d3.timeFormat("%b %d, %Y")(ext[0]));
+    d3.select("#dend").text(d3.timeFormat("%b %d, %Y")(ext[1]));
+  }
+}
+
+function updateChannelSummary(visible){
+  const summary = d3.select("#channelSummary");
+  summary.html("");
+  // 按当前可见事件，按通道统计
+  const byChannel = d3.rollup(visible, v => v.length, e => e.channel);
+  const top = Array.from(byChannel.entries()).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  if (top.length === 0){
+    summary.append("div").attr("class","summary-row").append("span").attr("class","sk").text("— no events visible —");
+    return;
+  }
+  top.forEach(([ch, count]) => {
+    const row = summary.append("div").attr("class","summary-row");
+    const k = row.append("span").attr("class","sk");
+    // 通道用其最常见类别的颜色做小色块（手写 mode，避开 d3.mode 兼容问题）
+    const chEvents = visible.filter(e => e.channel === ch);
+    const catCounts = {};
+    chEvents.forEach(e => { catCounts[e.category] = (catCounts[e.category] || 0) + 1; });
+    const dominantCat = Object.keys(catCounts).reduce((a, b) => catCounts[a] >= catCounts[b] ? a : b, chEvents[0]?.category);
+    k.append("span").attr("class","sw").style("background", colorMap[dominantCat] || "var(--ink-mute)");
+    k.append("span").text(ch);
+    row.append("span").attr("class","sv").text(count + " evt");
+  });
+}
+
+// 初始化
+renderEvents();
+updateDetail(null);
+</script>
+</body>
+</html>

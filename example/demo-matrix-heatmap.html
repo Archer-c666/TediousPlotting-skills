@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Matrix Heatmap · Global Temperature Matrix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,800&family=JetBrains+Mono:wght@300;400;500&family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  :root{
+    --bg-0:#0b0d12; --bg-1:#11141b; --bg-2:#181c25;
+    --line:rgba(255,255,255,0.08); --line-2:rgba(255,255,255,0.16);
+    --ink:#ecedef; --ink-dim:#9aa0aa; --ink-mute:#5b6068;
+    --accent:#f0c674; --accent-2:#e36a4a;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%; background:var(--bg-0); color:var(--ink); font-family:'Inter Tight', sans-serif; overflow-x:hidden;}
+  body::before{content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background:
+      radial-gradient(800px 600px at 18% 12%, rgba(240,198,116,.06), transparent 60%),
+      radial-gradient(900px 700px at 85% 88%, rgba(227,106,74,.05), transparent 60%);}
+  body::after{content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.35;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    mix-blend-mode:overlay;}
+
+  .frame{position:relative; z-index:1; max-width:1400px; margin:0 auto; padding:48px 56px 64px;}
+  header.title{display:grid; grid-template-columns:1fr auto; align-items:end; gap:48px; padding-bottom:28px; margin-bottom:28px; border-bottom:1px solid var(--line);}
+  .eyebrow{font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.28em; text-transform:uppercase; color:var(--ink-mute); display:flex; align-items:center; gap:12px;}
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--accent); box-shadow:0 0 12px var(--accent);}
+  h1{font-family:'Fraunces', serif; font-weight:300; font-size:clamp(38px, 4.4vw, 64px); line-height:1.02; letter-spacing:-.02em; margin-top:14px;}
+  h1 em{font-style:italic; font-weight:400; color:var(--accent);}
+  .lede{margin-top:14px; max-width:540px; color:var(--ink-dim); font-size:14px; line-height:1.55;}
+  .meta{text-align:right; font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--ink-mute); letter-spacing:.12em; line-height:1.9;}
+  .meta b{color:var(--ink); font-weight:500;}
+
+  /* 工具栏 —— 排序模式 + 色阶图例 */
+  .toolbar{display:flex; align-items:center; justify-content:space-between; gap:24px; padding:12px 16px; margin-bottom:18px; background:var(--bg-1); border:1px solid var(--line); flex-wrap:wrap;}
+  .sort-group{display:flex; align-items:center; gap:6px; font-family:'JetBrains Mono', monospace; font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-mute);}
+  .sort-group label{margin-right:6px;}
+  .sort-group button{background:var(--bg-2); border:1px solid var(--line-2); color:var(--ink-dim); padding:6px 12px; cursor:pointer; font-family:inherit; font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; transition: all .2s;}
+  .sort-group button:hover{color:var(--ink); border-color:var(--ink-dim);}
+  .sort-group button.active{background:var(--accent); color:var(--bg-0); border-color:var(--accent);}
+  .legend-scale{display:flex; align-items:center; gap:10px; font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-mute);}
+  .legend-scale .scale-gradient{width:140px; height:14px; border:1px solid var(--line-2);}
+  .legend-scale .scale-num{color:var(--ink-dim); font-family:'JetBrains Mono', monospace; font-variant-numeric:tabular-nums;}
+
+  /* 主舞台 */
+  .stage{display:grid; grid-template-columns: 1fr 280px; gap:28px; align-items:start;}
+  .chart-wrap{position:relative; background:var(--bg-1); border:1px solid var(--line); padding:20px;}
+  .chart-wrap svg{width:100%; height:auto; display:block; overflow:visible;}
+
+  .cell{cursor:pointer; transition: opacity .25s ease;}
+  .cell rect{transition: stroke .15s, filter .2s;}
+  .cell:hover rect{stroke:var(--ink); stroke-width:1.5; filter: brightness(1.15);}
+  .cell.dim{opacity:.15;}
+  .cell.glow rect{stroke:var(--accent); stroke-width:2;}
+
+  .axis-label{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.1em; fill:var(--ink-dim); cursor:pointer; transition: fill .2s;}
+  .axis-label:hover{fill:var(--accent);}
+  .axis-label.row-active, .axis-label.col-active{fill:var(--accent); font-weight:500;}
+
+  .row-summary, .col-summary{transition: opacity .2s;}
+  .summary-bar{fill:var(--ink-mute); transition: fill .2s;}
+  .row-summary.active .summary-bar, .col-summary.active .summary-bar{fill:var(--accent);}
+
+  /* 详情面板 */
+  .panel-detail{padding:20px 18px; background:linear-gradient(180deg, var(--bg-1), rgba(17,20,27,0)); border:1px solid var(--line);}
+  .panel-detail h3{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.28em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:12px;}
+  .panel-detail .name{font-family:'Fraunces', serif; font-weight:400; font-size:22px; line-height:1.15; margin-bottom:6px;}
+  .panel-detail .path{font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-mute); letter-spacing:.15em; margin-bottom:16px; text-transform:uppercase;}
+  .stat-row{display:flex; justify-content:space-between; align-items:baseline; padding:14px 0; border-bottom:1px solid var(--line);}
+  .stat-row .k{font-size:11px; color:var(--ink-mute); letter-spacing:.1em; text-transform:uppercase; font-family:'JetBrains Mono', monospace;}
+  .stat-row .v{font-family:'Fraunces', serif; font-weight:300; font-size:22px; font-variant-numeric:tabular-nums lining-nums;}
+  .stat-row .v small{font-size:11px; font-family:'JetBrains Mono', monospace; color:var(--ink-mute); margin-left:4px;}
+
+  .top-list{margin-top:22px;}
+  .top-list h4{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.22em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:10px;}
+  .top-row{display:flex; align-items:center; gap:8px; padding:7px 0; font-size:12px; position:relative;}
+  .top-row .nm{flex:1; color:var(--ink-dim); font-family:'JetBrains Mono', monospace; font-size:10.5px; letter-spacing:.06em;}
+  .top-row .vl{font-family:'JetBrains Mono', monospace; color:var(--ink-mute); font-size:10.5px; font-variant-numeric:tabular-nums;}
+  .top-row .br{position:absolute; left:0; bottom:0; height:1px; background:var(--accent); opacity:.45;}
+
+  .controls{margin-top:22px; padding-top:18px; border-top:1px solid var(--line);}
+  .ctrl{display:flex; justify-content:space-between; padding:8px 0; font-size:11px; color:var(--ink-dim); font-family:'JetBrains Mono', monospace; letter-spacing:.08em;}
+  .ctrl kbd{background:var(--bg-2); border:1px solid var(--line-2); padding:2px 6px; border-radius:2px; color:var(--ink); font-family:'JetBrains Mono', monospace; font-size:10px;}
+
+  .tip{position:fixed; pointer-events:none; z-index:99; background:rgba(17,20,27,.96); border:1px solid var(--line-2); padding:10px 14px; min-width:180px; font-size:12px; box-shadow:0 20px 40px rgba(0,0,0,.4); backdrop-filter: blur(8px); opacity:0; transform: translateY(4px); transition: opacity .15s, transform .15s;}
+  .tip.on{opacity:1; transform:translateY(0);}
+  .tip .tname{font-family:'Fraunces', serif; font-size:16px; margin-bottom:4px;}
+  .tip .tpath{font-family:'JetBrains Mono', monospace; font-size:9.5px; color:var(--ink-mute); letter-spacing:.12em; margin-bottom:8px; text-transform:uppercase;}
+  .tip .trow{display:flex; justify-content:space-between; gap:18px; font-family:'JetBrains Mono', monospace; font-size:11px; padding:2px 0;}
+  .tip .trow .tk{color:var(--ink-mute);}
+  .tip .trow .tv{font-variant-numeric:tabular-nums;}
+  .tip .tbar{width:100%; height:2px; margin-top:8px;}
+
+  @media (max-width: 1100px){
+    .stage{grid-template-columns:1fr;}
+    .frame{padding:32px 24px;}
+    header.title{grid-template-columns:1fr;}
+    .meta{text-align:left;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{animation-duration:.01ms !important; transition-duration:.01ms !important;}
+  }
+</style>
+</head>
+<body>
+<div class="frame">
+  <header class="title">
+    <div>
+      <div class="eyebrow"><span class="dot"></span> IDIOM · MATRIX HEATMAP · CLIMATE</div>
+      <h1>城市与季节的 <em>温度网格</em><br>。</h1>
+      <p class="lede">12 城市 × 12 月。点击排序按钮可重排行列，看赤道-极地温度梯度。</p>
+    </div>
+    <div class="meta">
+      <b>Climate Atlas</b> &nbsp; / &nbsp; Geography<br>
+      Dataset · Synthetic / Monthly avg °C<br>
+      Idiom · <b>Matrix Heatmap</b> &nbsp; / &nbsp; Marks · cells
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="sort-group">
+      <label>Sort rows ·</label>
+      <button class="sort-btn active" data-axis="row" data-mode="original">Original</button>
+      <button class="sort-btn" data-axis="row" data-mode="sum">By sum</button>
+      <button class="sort-btn" data-axis="row" data-mode="cluster">By cluster</button>
+    </div>
+    <div class="sort-group">
+      <label>Sort cols ·</label>
+      <button class="sort-btn active" data-axis="col" data-mode="original">Original</button>
+      <button class="sort-btn" data-axis="col" data-mode="sum">By sum</button>
+      <button class="sort-btn" data-axis="col" data-mode="cluster">By cluster</button>
+    </div>
+    <div class="legend-scale">
+      <span class="scale-num" id="legendMin">—</span>
+      <div class="scale-gradient" id="legendGradient"></div>
+      <span class="scale-num" id="legendMax">—</span>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="chart-wrap">
+      <svg id="chart" role="img" aria-label="矩阵热图，行×列的二维数值表"></svg>
+    </div>
+
+    <aside class="panel-detail" aria-live="polite">
+      <h3>Selection</h3>
+      <div class="name" id="dname">Temperature matrix</div>
+      <div class="path" id="dpath">— overview —</div>
+      <div class="stat-row"><span class="k">Value</span><span class="v" id="dval">—<small>°C</small></span></div>
+      <div class="stat-row"><span class="k">Row total</span><span class="v" id="drow">—</span></div>
+      <div class="stat-row"><span class="k">Col total</span><span class="v" id="dcol">—</span></div>
+
+      <div class="top-list" id="topList"></div>
+
+      <div class="controls">
+        <div class="ctrl"><span>Inspect cell</span><kbd>Hover</kbd></div>
+        <div class="ctrl"><span>Highlight row/col</span><kbd>Hover label</kbd></div>
+        <div class="ctrl"><span>Reorder</span><kbd>Sort buttons</kbd></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="tip" id="tip">
+  <div class="tname"></div>
+  <div class="tpath"></div>
+  <div class="trow"><span class="tk">Value</span><span class="tv tv-val"></span></div>
+  <div class="trow"><span class="tk">Row pct</span><span class="tv tv-row"></span></div>
+  <div class="trow"><span class="tk">Col pct</span><span class="tv tv-col"></span></div>
+  <div class="tbar"></div>
+</div>
+
+<script>
+// ============ 配置 ============
+const UNIT = "°C";
+const COLOR_SCHEME = "diverging";   // "sequential" 或 "diverging"
+const rawData = {
+  "rows": [
+    "Reykjavik", "Helsinki", "Moscow", "Berlin",
+    "Paris", "Rome", "Madrid", "Cairo",
+    "Mumbai", "Singapore", "Sydney", "Buenos Aires"
+  ],
+  "cols": [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  ],
+  "values": [
+    [-0.5,  0.4,  1.3,  3.4,  6.8, 10.0, 11.7, 11.0,  8.2,  5.0,  2.0,  0.4],
+    [-5.7, -6.4, -2.5,  3.1,  9.7, 14.4, 17.1, 15.7, 10.3,  5.4, -0.1, -3.7],
+    [-7.5, -6.7, -1.0,  6.7, 13.2, 17.0, 19.2, 17.0, 11.3,  5.6, -1.2, -5.2],
+    [ 1.0,  1.5,  4.9,  9.0, 14.3, 17.4, 19.8, 19.0, 14.7, 10.0,  4.7,  1.9],
+    [ 4.6,  5.6,  8.8, 11.4, 15.1, 18.3, 20.4, 20.3, 17.0, 12.7,  8.1,  5.3],
+    [ 7.5,  8.6, 11.5, 14.4, 18.4, 22.9, 25.7, 25.5, 21.4, 16.4, 11.4,  8.4],
+    [ 6.3,  7.9, 10.7, 12.4, 16.3, 21.1, 24.8, 24.4, 20.4, 14.7,  9.6,  6.6],
+    [13.7, 15.0, 17.5, 21.4, 24.7, 27.2, 28.1, 28.0, 26.2, 23.2, 18.7, 14.9],
+    [25.0, 25.7, 27.6, 29.5, 30.2, 29.0, 27.8, 27.6, 27.7, 28.5, 27.7, 25.9],
+    [27.0, 27.2, 27.6, 27.8, 28.3, 28.1, 27.6, 27.7, 27.8, 27.7, 27.5, 27.2],
+    [22.9, 22.9, 21.8, 19.0, 16.0, 13.3, 12.5, 13.7, 16.0, 18.1, 19.7, 21.7],
+    [24.9, 23.7, 22.4, 18.7, 15.6, 12.6, 12.1, 13.8, 15.6, 18.7, 21.5, 23.9]
+  ]
+}
+;
+
+// ============ 数据预处理 ============
+const rowNames = rawData.rows;
+const colNames = rawData.cols;
+const values = rawData.values;   // 二维数组 [row][col]
+
+// 把矩阵展平为 cell 列表
+const cells = [];
+for (let i = 0; i < rowNames.length; i++){
+  for (let j = 0; j < colNames.length; j++){
+    cells.push({
+      row: rowNames[i],
+      col: colNames[j],
+      rowIdx: i,
+      colIdx: j,
+      value: values[i][j]
+    });
+  }
+}
+
+const flatVals = cells.map(c => c.value).filter(v => v !== null && v !== undefined && !isNaN(v));
+const dataMin = d3.min(flatVals);
+const dataMax = d3.max(flatVals);
+const dataAbs = Math.max(Math.abs(dataMin), Math.abs(dataMax));
+
+// 行/列总和
+const rowSums = rowNames.map((_, i) => d3.sum(values[i]));
+const colSums = colNames.map((_, j) => d3.sum(values.map(row => row[j])));
+
+// ============ 颜色刻度 ============
+let colorScale;
+if (COLOR_SCHEME === "diverging"){
+  // 围绕 0 的发散色（红-中性-蓝）
+  colorScale = d3.scaleDiverging()
+    .interpolator(d3.interpolateRdBu)
+    .domain([dataAbs, 0, -dataAbs]);
+} else {
+  // 顺序色，琥珀梯度
+  colorScale = d3.scaleSequential()
+    .interpolator(t => d3.interpolateRgb("#1c1e26", "#f0c674")(t))
+    .domain([dataMin, dataMax]);
+}
+
+// 渲染图例梯度
+const grad = d3.select("#legendGradient").style("background", buildGradientCSS());
+d3.select("#legendMin").text(formatNum(dataMin));
+d3.select("#legendMax").text(formatNum(dataMax));
+
+function buildGradientCSS(){
+  const stops = d3.range(0, 1.0001, 0.1).map(t => {
+    const v = dataMin + (dataMax - dataMin) * t;
+    return `${colorScale(v)} ${t * 100}%`;
+  });
+  return `linear-gradient(90deg, ${stops.join(", ")})`;
+}
+
+// ============ 主矩阵渲染 ============
+const W = 900, H = 620;
+const M = { top: 90, right: 90, bottom: 30, left: 130 };
+const svg = d3.select("#chart").attr("viewBox", `0 0 ${W} ${H}`).attr("preserveAspectRatio","xMidYMid meet");
+
+let rowOrder = d3.range(rowNames.length);
+let colOrder = d3.range(colNames.length);
+let rowSortMode = "original";
+let colSortMode = "original";
+
+function render(){
+  svg.selectAll("*").remove();
+
+  const innerW = W - M.left - M.right;
+  const innerH = H - M.top - M.bottom;
+
+  const xScale = d3.scaleBand().domain(colOrder).range([0, innerW]).padding(0.04);
+  const yScale = d3.scaleBand().domain(rowOrder).range([0, innerH]).padding(0.04);
+
+  const g = svg.append("g").attr("transform", `translate(${M.left},${M.top})`);
+
+  // 列标签（顶部，旋转 -45°）
+  const colLabels = g.append("g").attr("class","col-labels")
+    .selectAll("text").data(colOrder).join("text")
+    .attr("class","axis-label")
+    .attr("transform", j => `translate(${xScale(j) + xScale.bandwidth()/2}, -10) rotate(-45)`)
+    .attr("text-anchor","start")
+    .text(j => colNames[j])
+    .attr("data-col", d => d);
+
+  // 行标签（左侧）
+  const rowLabels = g.append("g").attr("class","row-labels")
+    .selectAll("text").data(rowOrder).join("text")
+    .attr("class","axis-label")
+    .attr("x", -10).attr("y", i => yScale(i) + yScale.bandwidth()/2 + 4)
+    .attr("text-anchor","end")
+    .text(i => rowNames[i])
+    .attr("data-row", d => d);
+
+  // 行边缘条 —— 行总和小条带
+  const rowMax = d3.max(rowSums);
+  const rowBarW = 36;
+  const rowSummary = svg.append("g").attr("class","row-summaries")
+    .selectAll("g.row-summary").data(rowOrder).join("g")
+    .attr("class","row-summary")
+    .attr("transform", i => `translate(${M.left + innerW + 14},${M.top + yScale(i)})`);
+  rowSummary.append("rect").attr("class","summary-bar")
+    .attr("x", 0).attr("y", 0)
+    .attr("width", i => (rowSums[i] / rowMax) * rowBarW)
+    .attr("height", yScale.bandwidth())
+    .attr("rx", 1)
+    .attr("opacity", 0.45);
+
+  // 列边缘条 —— 列总和小条带
+  const colMax = d3.max(colSums);
+  const colBarH = 26;
+  const colSummary = svg.append("g").attr("class","col-summaries")
+    .selectAll("g.col-summary").data(colOrder).join("g")
+    .attr("class","col-summary")
+    .attr("transform", j => `translate(${M.left + xScale(j)},${M.top + innerH + 4})`);
+  colSummary.append("rect").attr("class","summary-bar")
+    .attr("x", 0).attr("y", 0)
+    .attr("width", xScale.bandwidth())
+    .attr("height", j => (colSums[j] / colMax) * colBarH)
+    .attr("rx", 1)
+    .attr("opacity", 0.45);
+
+  // cells
+  const cellSel = g.append("g").attr("class","cells")
+    .selectAll("g.cell").data(cells).join("g")
+    .attr("class","cell")
+    .attr("transform", c => `translate(${xScale(c.colIdx)},${yScale(c.rowIdx)})`)
+    .attr("tabindex", 0)
+    .attr("role","button")
+    .attr("aria-label", c => `${c.row} × ${c.col}: ${c.value}`);
+
+  cellSel.append("rect")
+    .attr("width", xScale.bandwidth())
+    .attr("height", yScale.bandwidth())
+    .attr("fill", c => c.value === null || c.value === undefined ? "var(--bg-2)" : colorScale(c.value))
+    .attr("stroke", "var(--bg-1)")
+    .attr("stroke-width", 0.5);
+
+  // 入场错峰
+  cellSel.style("opacity", 0)
+    .transition()
+    .delay((c, i) => 20 + (c.rowIdx + c.colIdx) * 8)
+    .duration(620)
+    .ease(d3.easeCubicOut)
+    .style("opacity", 1);
+
+  // ============ 交互 ============
+  cellSel.on("mouseenter", function(event, c){
+      cellSel.classed("dim", n => n.row !== c.row && n.col !== c.col);
+      d3.select(this).classed("glow", true).classed("dim", false);
+      rowLabels.classed("row-active", i => i === c.rowIdx);
+      colLabels.classed("col-active", j => j === c.colIdx);
+      rowSummary.classed("active", i => i === c.rowIdx);
+      colSummary.classed("active", j => j === c.colIdx);
+      showTip(event, c);
+      updateDetail(c);
+    })
+    .on("mousemove", e => {
+      tip.style("left", (e.clientX + 18) + "px").style("top", (e.clientY + 18) + "px");
+    })
+    .on("mouseleave", () => {
+      cellSel.classed("dim", false).classed("glow", false);
+      rowLabels.classed("row-active", false);
+      colLabels.classed("col-active", false);
+      rowSummary.classed("active", false);
+      colSummary.classed("active", false);
+      tip.classed("on", false);
+      updateDetail(null);
+    });
+
+  // 行/列标签悬停高亮整行/整列
+  rowLabels.on("mouseenter", function(event, i){
+      cellSel.classed("dim", c => c.rowIdx !== i);
+      d3.select(this).classed("row-active", true);
+      rowSummary.classed("active", k => k === i);
+      updateRowColDetail("row", i);
+    })
+    .on("mouseleave", function(){
+      cellSel.classed("dim", false);
+      d3.select(this).classed("row-active", false);
+      rowSummary.classed("active", false);
+      updateDetail(null);
+    });
+
+  colLabels.on("mouseenter", function(event, j){
+      cellSel.classed("dim", c => c.colIdx !== j);
+      d3.select(this).classed("col-active", true);
+      colSummary.classed("active", k => k === j);
+      updateRowColDetail("col", j);
+    })
+    .on("mouseleave", function(){
+      cellSel.classed("dim", false);
+      d3.select(this).classed("col-active", false);
+      colSummary.classed("active", false);
+      updateDetail(null);
+    });
+}
+
+// ============ 排序 ============
+function computeOrder(axis, mode){
+  const n = axis === "row" ? rowNames.length : colNames.length;
+  if (mode === "original") return d3.range(n);
+  if (mode === "sum"){
+    const sums = axis === "row" ? rowSums : colSums;
+    return d3.range(n).sort((a, b) => sums[b] - sums[a]);
+  }
+  if (mode === "cluster"){
+    // 简易聚类：按每行/列的"重心"位置排序（值加权平均索引）
+    if (axis === "row"){
+      const centroids = values.map(row => {
+        const s = d3.sum(row);
+        return s === 0 ? 0 : d3.sum(row.map((v, j) => v * j)) / s;
+      });
+      return d3.range(n).sort((a, b) => centroids[a] - centroids[b]);
+    } else {
+      const centroids = colNames.map((_, j) => {
+        const col = values.map(row => row[j]);
+        const s = d3.sum(col);
+        return s === 0 ? 0 : d3.sum(col.map((v, i) => v * i)) / s;
+      });
+      return d3.range(n).sort((a, b) => centroids[a] - centroids[b]);
+    }
+  }
+  return d3.range(n);
+}
+
+d3.selectAll(".sort-btn").on("click", function(){
+  const btn = d3.select(this);
+  const axis = btn.attr("data-axis");
+  const mode = btn.attr("data-mode");
+  d3.selectAll(`.sort-btn[data-axis='${axis}']`).classed("active", false);
+  btn.classed("active", true);
+  if (axis === "row"){ rowSortMode = mode; rowOrder = computeOrder("row", mode); }
+  else { colSortMode = mode; colOrder = computeOrder("col", mode); }
+  render();
+});
+
+// ============ tooltip & 详情 ============
+const tip = d3.select("#tip");
+function showTip(event, c){
+  tip.select(".tname").text(c.value === null || c.value === undefined ? "—" : formatNum(c.value));
+  tip.select(".tpath").text(`${c.row} × ${c.col}`);
+  tip.select(".tv-val").html(formatNum(c.value) + " <span style='color:var(--ink-mute)'>" + UNIT + "</span>");
+  const rowSum = rowSums[c.rowIdx];
+  const colSum = colSums[c.colIdx];
+  tip.select(".tv-row").text(rowSum > 0 ? ((c.value / rowSum) * 100).toFixed(1) + "%" : "—");
+  tip.select(".tv-col").text(colSum > 0 ? ((c.value / colSum) * 100).toFixed(1) + "%" : "—");
+  tip.select(".tbar").style("background", c.value === null || c.value === undefined ? "var(--ink-mute)" : colorScale(c.value));
+  tip.classed("on", true);
+}
+
+function updateDetail(c){
+  if (c === null){
+    d3.select("#dname").text(`${rowNames.length} × ${colNames.length}`);
+    d3.select("#dpath").text("— matrix overview —");
+    d3.select("#dval").html(formatNum(d3.sum(flatVals)) + "<small>" + UNIT + " total</small>");
+    d3.select("#drow").html(rowNames.length + "<small>rows</small>");
+    d3.select("#dcol").html(colNames.length + "<small>cols</small>");
+    d3.select("#topList").html("");
+    return;
+  }
+  d3.select("#dname").text(formatNum(c.value) + " " + UNIT);
+  d3.select("#dpath").text(`${c.row} × ${c.col}`);
+  d3.select("#dval").html(formatNum(c.value) + "<small>" + UNIT + "</small>");
+  d3.select("#drow").html(formatNum(rowSums[c.rowIdx]) + "<small>" + UNIT + "</small>");
+  d3.select("#dcol").html(formatNum(colSums[c.colIdx]) + "<small>" + UNIT + "</small>");
+
+  // top sub-items：当前行的 top 5 列
+  const wrap = d3.select("#topList"); wrap.html("");
+  wrap.append("h4").text(`Top in row · ${c.row}`);
+  const rowCells = colNames.map((cn, j) => ({ name: cn, value: values[c.rowIdx][j] }))
+    .sort((a, b) => b.value - a.value).slice(0, 6);
+  const rowMax = rowCells[0].value || 1;
+  rowCells.forEach(r => {
+    const row = wrap.append("div").attr("class","top-row");
+    row.append("div").attr("class","nm").text(r.name);
+    row.append("div").attr("class","vl").text(formatNum(r.value));
+    row.append("div").attr("class","br").style("width", (Math.abs(r.value) / Math.abs(rowMax) * 100) + "%");
+  });
+}
+
+function updateRowColDetail(axis, idx){
+  if (axis === "row"){
+    d3.select("#dname").text(rowNames[idx]);
+    d3.select("#dpath").text("Row · " + rowNames[idx]);
+    d3.select("#dval").html(formatNum(rowSums[idx]) + "<small>" + UNIT + " sum</small>");
+    d3.select("#drow").html(colNames.length + "<small>cells</small>");
+    d3.select("#dcol").html(formatNum(rowSums[idx] / colNames.length) + "<small>avg</small>");
+    const wrap = d3.select("#topList"); wrap.html("");
+    wrap.append("h4").text(`Top cells in ${rowNames[idx]}`);
+    const cells = colNames.map((cn, j) => ({ name: cn, value: values[idx][j] })).sort((a, b) => b.value - a.value).slice(0, 6);
+    const max = cells[0].value || 1;
+    cells.forEach(r => {
+      const row = wrap.append("div").attr("class","top-row");
+      row.append("div").attr("class","nm").text(r.name);
+      row.append("div").attr("class","vl").text(formatNum(r.value));
+      row.append("div").attr("class","br").style("width", (Math.abs(r.value) / Math.abs(max) * 100) + "%");
+    });
+  } else {
+    d3.select("#dname").text(colNames[idx]);
+    d3.select("#dpath").text("Column · " + colNames[idx]);
+    d3.select("#dval").html(formatNum(colSums[idx]) + "<small>" + UNIT + " sum</small>");
+    d3.select("#drow").html(rowNames.length + "<small>cells</small>");
+    d3.select("#dcol").html(formatNum(colSums[idx] / rowNames.length) + "<small>avg</small>");
+    const wrap = d3.select("#topList"); wrap.html("");
+    wrap.append("h4").text(`Top cells in ${colNames[idx]}`);
+    const cells = rowNames.map((rn, i) => ({ name: rn, value: values[i][idx] })).sort((a, b) => b.value - a.value).slice(0, 6);
+    const max = cells[0].value || 1;
+    cells.forEach(r => {
+      const row = wrap.append("div").attr("class","top-row");
+      row.append("div").attr("class","nm").text(r.name);
+      row.append("div").attr("class","vl").text(formatNum(r.value));
+      row.append("div").attr("class","br").style("width", (Math.abs(r.value) / Math.abs(max) * 100) + "%");
+    });
+  }
+}
+
+function formatNum(n){
+  if (n === null || n === undefined || isNaN(n)) return "—";
+  if (Math.abs(n) >= 10000) return (n/1000).toFixed(1) + "k";
+  if (Math.abs(n) >= 100)   return n.toFixed(0);
+  if (Math.abs(n) >= 1)     return n.toFixed(2);
+  return n.toFixed(3);
+}
+
+render();
+updateDetail(null);
+</script>
+</body>
+</html>

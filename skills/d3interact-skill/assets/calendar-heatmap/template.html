@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Calendar Heatmap · {{TITLE}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,800&family=JetBrains+Mono:wght@300;400;500&family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  :root{
+    --bg-0:#0b0d12; --bg-1:#11141b; --bg-2:#181c25;
+    --line:rgba(255,255,255,0.08); --line-2:rgba(255,255,255,0.16);
+    --ink:#ecedef; --ink-dim:#9aa0aa; --ink-mute:#5b6068;
+    --accent:#f0c674; --accent-2:#e36a4a;
+    --cell-empty:#161922;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%; background:var(--bg-0); color:var(--ink); font-family:'Inter Tight', sans-serif; overflow-x:hidden;}
+  body::before{content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background:
+      radial-gradient(800px 600px at 18% 12%, rgba(240,198,116,.06), transparent 60%),
+      radial-gradient(900px 700px at 85% 88%, rgba(227,106,74,.05), transparent 60%);}
+  body::after{content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.35;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    mix-blend-mode:overlay;}
+
+  .frame{position:relative; z-index:1; max-width:1400px; margin:0 auto; padding:48px 56px 64px;}
+  header.title{display:grid; grid-template-columns:1fr auto; align-items:end; gap:48px; padding-bottom:28px; margin-bottom:28px; border-bottom:1px solid var(--line);}
+  .eyebrow{font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.28em; text-transform:uppercase; color:var(--ink-mute); display:flex; align-items:center; gap:12px;}
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--accent); box-shadow:0 0 12px var(--accent);}
+  h1{font-family:'Fraunces', serif; font-weight:300; font-size:clamp(38px, 4.4vw, 64px); line-height:1.02; letter-spacing:-.02em; margin-top:14px;}
+  h1 em{font-style:italic; font-weight:400; color:var(--accent);}
+  .lede{margin-top:14px; max-width:540px; color:var(--ink-dim); font-size:14px; line-height:1.55;}
+  .meta{text-align:right; font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--ink-mute); letter-spacing:.12em; line-height:1.9;}
+  .meta b{color:var(--ink); font-weight:500;}
+
+  /* 工具栏 —— 年份切换 + 颜色刻度图例 */
+  .toolbar{display:flex; align-items:center; justify-content:space-between; gap:24px; padding:12px 16px; margin-bottom:18px; background:var(--bg-1); border:1px solid var(--line);}
+  .year-nav{display:flex; align-items:center; gap:6px; font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase;}
+  .year-nav button{background:var(--bg-2); border:1px solid var(--line-2); color:var(--ink-dim); width:30px; height:26px; cursor:pointer; font-family:inherit; font-size:11px; transition: all .2s;}
+  .year-nav button:hover:not(:disabled){background:var(--accent); color:var(--bg-0); border-color:var(--accent);}
+  .year-nav button:disabled{opacity:.3; cursor:not-allowed;}
+  .year-nav .current-year{font-family:'Fraunces', serif; font-size:20px; font-weight:300; color:var(--ink); padding:0 10px; letter-spacing:0; text-transform:none; min-width:64px; text-align:center;}
+  .legend-scale{display:flex; align-items:center; gap:10px; font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-mute);}
+  .legend-scale .scale{display:flex; gap:2px;}
+  .legend-scale .swatch{width:14px; height:14px;}
+  .legend-scale .scale-num{color:var(--ink-dim); font-size:10px;}
+
+  /* 主舞台 —— 年视图 + 右侧详情 */
+  .stage{display:grid; grid-template-columns: 1fr 280px; gap:28px; align-items:start;}
+  .chart-wrap{position:relative; background:var(--bg-1); border:1px solid var(--line); padding:24px 20px;}
+  .chart-wrap svg{width:100%; height:auto; display:block; overflow:visible;}
+
+  .day-cell{cursor:pointer; transition: opacity .25s ease;}
+  .day-cell rect{transition: filter .2s, stroke .2s;}
+  .day-cell:hover rect{filter: brightness(1.25) saturate(1.15);}
+  .day-cell.dim{opacity:.18;}
+  .day-cell.glow rect{stroke:var(--accent); stroke-width:1.5;}
+  .day-cell.selected rect{stroke:var(--accent); stroke-width:2;}
+
+  .month-label, .day-label{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.14em; text-transform:uppercase; fill:var(--ink-mute); pointer-events:none;}
+  .month-label{font-size:11px;}
+
+  /* 二级视图 —— 周分布条带 + 月分布柱 */
+  .secondary{display:grid; grid-template-columns: 1fr 1fr; gap:28px; margin-top:28px;}
+  .sub-card{background:var(--bg-1); border:1px solid var(--line); padding:20px 18px;}
+  .sub-card h3{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.28em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:14px;}
+  .sub-card svg{width:100%; height:140px; display:block; overflow:visible;}
+  .bar-mark{transition: fill .2s, opacity .2s; cursor:pointer;}
+  .bar-mark:hover{fill:var(--accent);}
+  .bar-label{font-family:'JetBrains Mono', monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; fill:var(--ink-mute); pointer-events:none;}
+  .bar-val{font-family:'JetBrains Mono', monospace; font-size:9.5px; fill:var(--ink-dim); pointer-events:none; font-variant-numeric:tabular-nums;}
+
+  /* 详情面板 */
+  .panel-detail{padding:20px 18px; background:linear-gradient(180deg, var(--bg-1), rgba(17,20,27,0)); border:1px solid var(--line);}
+  .panel-detail h3{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.28em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:12px;}
+  .panel-detail .name{font-family:'Fraunces', serif; font-weight:400; font-size:24px; line-height:1.15; margin-bottom:6px;}
+  .panel-detail .path{font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-mute); letter-spacing:.15em; margin-bottom:16px; text-transform:uppercase;}
+  .stat-row{display:flex; justify-content:space-between; align-items:baseline; padding:14px 0; border-bottom:1px solid var(--line);}
+  .stat-row .k{font-size:11px; color:var(--ink-mute); letter-spacing:.1em; text-transform:uppercase; font-family:'JetBrains Mono', monospace;}
+  .stat-row .v{font-family:'Fraunces', serif; font-weight:300; font-size:22px; font-variant-numeric:tabular-nums lining-nums;}
+  .stat-row .v small{font-size:11px; font-family:'JetBrains Mono', monospace; color:var(--ink-mute); margin-left:4px;}
+
+  .summary-block{margin-top:20px; padding:14px; background:var(--bg-2); border:1px solid var(--line);}
+  .summary-block h4{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.22em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:10px;}
+  .summary-row{display:flex; justify-content:space-between; padding:5px 0; font-size:11px; font-family:'JetBrains Mono', monospace;}
+  .summary-row .sk{color:var(--ink-mute); letter-spacing:.08em;}
+  .summary-row .sv{color:var(--ink); font-variant-numeric:tabular-nums;}
+
+  .controls{margin-top:22px; padding-top:18px; border-top:1px solid var(--line);}
+  .ctrl{display:flex; justify-content:space-between; padding:8px 0; font-size:11px; color:var(--ink-dim); font-family:'JetBrains Mono', monospace; letter-spacing:.08em;}
+  .ctrl kbd{background:var(--bg-2); border:1px solid var(--line-2); padding:2px 6px; border-radius:2px; color:var(--ink); font-family:'JetBrains Mono', monospace; font-size:10px;}
+
+  /* tooltip */
+  .tip{position:fixed; pointer-events:none; z-index:99; background:rgba(17,20,27,.96); border:1px solid var(--line-2); padding:10px 14px; min-width:170px; font-size:12px; box-shadow:0 20px 40px rgba(0,0,0,.4); backdrop-filter: blur(8px); opacity:0; transform: translateY(4px); transition: opacity .15s, transform .15s;}
+  .tip.on{opacity:1; transform:translateY(0);}
+  .tip .tname{font-family:'Fraunces', serif; font-size:16px; margin-bottom:4px;}
+  .tip .tpath{font-family:'JetBrains Mono', monospace; font-size:9.5px; color:var(--ink-mute); letter-spacing:.12em; margin-bottom:8px; text-transform:uppercase;}
+  .tip .trow{display:flex; justify-content:space-between; gap:18px; font-family:'JetBrains Mono', monospace; font-size:11px; padding:2px 0;}
+  .tip .trow .tk{color:var(--ink-mute);}
+  .tip .trow .tv{font-variant-numeric:tabular-nums;}
+  .tip .tbar{width:100%; height:2px; margin-top:8px; background:var(--accent);}
+
+  /* 空状态 */
+  .empty{display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 24px; color:var(--ink-mute); text-align:center;}
+  .empty-icon{font-size:48px; opacity:.3; margin-bottom:14px; font-family:'Fraunces', serif;}
+  .empty-title{font-family:'Fraunces', serif; font-size:18px; color:var(--ink-dim); margin-bottom:6px;}
+  .empty-hint{font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.12em; text-transform:uppercase;}
+
+  @media (max-width: 1100px){
+    .stage{grid-template-columns:1fr;}
+    .secondary{grid-template-columns:1fr;}
+    .frame{padding:32px 24px;}
+    header.title{grid-template-columns:1fr;}
+    .meta{text-align:left;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{animation-duration:.01ms !important; transition-duration:.01ms !important;}
+  }
+</style>
+</head>
+<body>
+<div class="frame">
+  <header class="title">
+    <div>
+      <div class="eyebrow"><span class="dot"></span> {{EYEBROW}}</div>
+      <h1>{{H1_LEFT}} <em>{{H1_EM}}</em><br>{{H1_RIGHT}}</h1>
+      <p class="lede">{{LEDE}}</p>
+    </div>
+    <div class="meta">
+      <b>{{META_TITLE}}</b> &nbsp; / &nbsp; {{META_SUB}}<br>
+      Dataset · {{META_DATA}}<br>
+      Idiom · <b>Calendar Heatmap</b> &nbsp; / &nbsp; Marks · day cells
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="year-nav">
+      <button id="prevYear" aria-label="Previous year">◀</button>
+      <span class="current-year" id="currentYear">—</span>
+      <button id="nextYear" aria-label="Next year">▶</button>
+    </div>
+    <div class="legend-scale">
+      <span>{{UNIT_LOW}}</span>
+      <div class="scale" id="legendScale"></div>
+      <span>{{UNIT_HIGH}}</span>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="chart-wrap">
+      <svg id="chart" role="img" aria-label="日历热力图，每个方格代表一天的数值"></svg>
+    </div>
+
+    <aside class="panel-detail" aria-live="polite">
+      <h3>Selection</h3>
+      <div class="name" id="dname">{{ROOT_NAME}}</div>
+      <div class="path" id="dpath">— year overview —</div>
+      <div class="stat-row"><span class="k">Value</span><span class="v" id="dval">—<small>{{UNIT}}</small></span></div>
+      <div class="stat-row"><span class="k">Rank</span><span class="v" id="drank">—<small>/ year</small></span></div>
+      <div class="stat-row"><span class="k">vs Median</span><span class="v" id="dmed">—<small>×</small></span></div>
+
+      <div class="summary-block">
+        <h4>Year stats</h4>
+        <div class="summary-row"><span class="sk">Active days</span><span class="sv" id="sActive">—</span></div>
+        <div class="summary-row"><span class="sk">Total</span><span class="sv" id="sTotal">—</span></div>
+        <div class="summary-row"><span class="sk">Peak day</span><span class="sv" id="sPeak">—</span></div>
+        <div class="summary-row"><span class="sk">Median</span><span class="sv" id="sMed">—</span></div>
+      </div>
+
+      <div class="controls">
+        <div class="ctrl"><span>Inspect day</span><kbd>Hover</kbd></div>
+        <div class="ctrl"><span>Pin day</span><kbd>Click</kbd></div>
+        <div class="ctrl"><span>Switch year</span><kbd>◀ ▶</kbd></div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="secondary">
+    <div class="sub-card">
+      <h3>Distribution · weekday</h3>
+      <svg id="weekdayChart"></svg>
+    </div>
+    <div class="sub-card">
+      <h3>Distribution · month</h3>
+      <svg id="monthChart"></svg>
+    </div>
+  </div>
+</div>
+
+<div class="tip" id="tip">
+  <div class="tname"></div>
+  <div class="tpath"></div>
+  <div class="trow"><span class="tk">Value</span><span class="tv tv-val"></span></div>
+  <div class="trow"><span class="tk">Weekday</span><span class="tv tv-day"></span></div>
+  <div class="tbar"></div>
+</div>
+
+<script>
+// ============ 配置 ============
+const UNIT = "{{UNIT}}";
+const ACCENT = "{{ACCENT_COLOR}}";   // 主梯度终点色，建议琥珀 #f0c674
+const rawData = {{DATA}};
+
+const WEEKDAY_LABELS = ["Mon","","Wed","","Fri","",""];
+const MONTH_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+// ============ 数据预处理 ============
+const parsed = rawData.map(d => ({
+  date: new Date(d.date),
+  value: +d.value
+})).filter(d => !isNaN(d.date) && !isNaN(d.value));
+
+if (parsed.length === 0){
+  document.getElementById("chart").outerHTML = `
+    <div class="empty">
+      <div class="empty-icon">∅</div>
+      <div class="empty-title">没有数据可显示</div>
+      <div class="empty-hint">Check your data source</div>
+    </div>`;
+  throw new Error("Empty data");
+}
+
+const byDate = new Map(parsed.map(d => [d3.timeDay(d.date).getTime(), d.value]));
+const years = Array.from(new Set(parsed.map(d => d.date.getFullYear()))).sort();
+let currentYear = years[years.length - 1];
+
+const allValues = parsed.map(d => d.value).filter(v => v > 0);
+const globalMax = d3.max(allValues);
+const globalMedian = d3.median(allValues) || 1;
+
+// ============ 颜色刻度 ============
+// 5 档明度递增，呼应 GitHub 贡献图的认知模型
+const colorScale = d3.scaleQuantize()
+  .domain([0, globalMax])
+  .range([
+    d3.color(ACCENT).copy({opacity: 0.18}).formatRgb(),
+    d3.color(ACCENT).copy({opacity: 0.38}).formatRgb(),
+    d3.color(ACCENT).copy({opacity: 0.58}).formatRgb(),
+    d3.color(ACCENT).copy({opacity: 0.80}).formatRgb(),
+    ACCENT
+  ]);
+
+function colorFor(value){
+  if (value === undefined || value === null) return "var(--cell-empty)";
+  if (value === 0) return "var(--cell-empty)";
+  return colorScale(value);
+}
+
+// 渲染图例色阶
+const legendEl = d3.select("#legendScale");
+[0.2, 0.4, 0.6, 0.8, 1.0].forEach(t => {
+  legendEl.append("div").attr("class","swatch")
+    .style("background", colorFor(globalMax * t));
+});
+
+// ============ 主日历视图 ============
+const CELL = 14;     // 单元格边长
+const GAP  = 3;      // 单元格间距
+const LEFT_PAD = 32; // 左侧周标签
+const TOP_PAD = 24;  // 上方月标签
+
+const svg = d3.select("#chart");
+const weekdayChart = d3.select("#weekdayChart");
+const monthChart = d3.select("#monthChart");
+
+function renderCalendar(year){
+  svg.selectAll("*").remove();
+
+  const start = new Date(year, 0, 1);
+  const end   = new Date(year + 1, 0, 1);
+  const days  = d3.timeDays(start, end);
+
+  // 计算 ISO 周序（周一为起始）
+  const dayOfWeek = d => (d.getDay() + 6) % 7;  // Mon=0, Sun=6
+  const weekOfYear = d => {
+    const ref = new Date(year, 0, 1);
+    const refDow = dayOfWeek(ref);
+    const offset = Math.floor((d - ref) / 86400000) + refDow;
+    return Math.floor(offset / 7);
+  };
+
+  const totalWeeks = weekOfYear(new Date(year, 11, 31)) + 1;
+  const width  = LEFT_PAD + totalWeeks * (CELL + GAP);
+  const height = TOP_PAD + 7 * (CELL + GAP);
+
+  svg.attr("viewBox", `0 0 ${width} ${height}`)
+     .attr("preserveAspectRatio","xMinYMin meet")
+     .style("height", height + "px");
+
+  // 周标签（左侧）
+  const dayG = svg.append("g").attr("class","day-labels");
+  WEEKDAY_LABELS.forEach((lbl, i) => {
+    if (!lbl) return;
+    dayG.append("text").attr("class","day-label")
+      .attr("x", LEFT_PAD - 8).attr("y", TOP_PAD + i * (CELL + GAP) + CELL * 0.7)
+      .attr("text-anchor","end")
+      .text(lbl);
+  });
+
+  // 月标签（上方）
+  const monthG = svg.append("g").attr("class","month-labels");
+  for (let m = 0; m < 12; m++){
+    const firstOfMonth = new Date(year, m, 1);
+    const wk = weekOfYear(firstOfMonth);
+    monthG.append("text").attr("class","month-label")
+      .attr("x", LEFT_PAD + wk * (CELL + GAP)).attr("y", TOP_PAD - 10)
+      .text(MONTH_LABELS[m]);
+  }
+
+  // 日单元格
+  const cells = svg.append("g").attr("class","days")
+    .selectAll("g.day-cell").data(days).join("g")
+    .attr("class","day-cell")
+    .attr("transform", d => `translate(${LEFT_PAD + weekOfYear(d) * (CELL + GAP)},${TOP_PAD + dayOfWeek(d) * (CELL + GAP)})`)
+    .attr("tabindex", 0)
+    .attr("role","button")
+    .attr("aria-label", d => {
+      const v = byDate.get(d.getTime());
+      return `${d3.timeFormat("%B %d, %Y")(d)}, value ${v !== undefined ? v : "no data"}`;
+    });
+
+  cells.append("rect")
+    .attr("width", CELL).attr("height", CELL)
+    .attr("rx", 2)
+    .attr("fill", d => colorFor(byDate.get(d.getTime())))
+    .attr("stroke", "var(--bg-0)")
+    .attr("stroke-width", 0.5);
+
+  // 入场错峰
+  cells.style("opacity", 0)
+    .transition()
+    .delay((d, i) => 20 + i * 1.5)
+    .duration(500)
+    .ease(d3.easeCubicOut)
+    .style("opacity", 1);
+
+  cells.on("mouseenter", function(event, d){
+      const v = byDate.get(d.getTime());
+      cells.classed("dim", n => n !== d);
+      d3.select(this).classed("glow", true).classed("dim", false);
+      showTip(event, d, v);
+      updateDetail(d, v);
+    })
+    .on("mousemove", e => {
+      tip.style("left", (e.clientX + 18) + "px").style("top", (e.clientY + 18) + "px");
+    })
+    .on("mouseleave", function(){
+      cells.classed("dim", false).classed("glow", false);
+      tip.classed("on", false);
+      updateDetail(null);
+    })
+    .on("click", function(event, d){
+      cells.classed("selected", false);
+      d3.select(this).classed("selected", true);
+    })
+    .on("keydown", function(event, d){
+      if (event.key === "Enter" || event.key === " "){
+        event.preventDefault();
+        const v = byDate.get(d.getTime());
+        updateDetail(d, v);
+      }
+    });
+
+  // 年度统计
+  updateYearStats(year, days);
+  renderWeekdayChart(year, days);
+  renderMonthChart(year, days);
+  updateDetail(null);
+
+  d3.select("#currentYear").text(year);
+  d3.select("#prevYear").property("disabled", years.indexOf(year) === 0);
+  d3.select("#nextYear").property("disabled", years.indexOf(year) === years.length - 1);
+}
+
+// ============ 周分布 ============
+function renderWeekdayChart(year, days){
+  weekdayChart.selectAll("*").remove();
+  const groups = d3.rollup(
+    days.filter(d => byDate.has(d.getTime())),
+    v => d3.mean(v, d => byDate.get(d.getTime())),
+    d => (d.getDay() + 6) % 7
+  );
+  const data = d3.range(7).map(i => ({
+    idx: i,
+    name: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"][i],
+    value: groups.get(i) || 0
+  }));
+
+  // 用固定 viewBox 而非 clientWidth，避免初次渲染时父布局未完成导致宽度为 0
+  const w = 460;
+  const h = 140;
+  const m = {top: 14, right: 8, bottom: 24, left: 8};
+
+  weekdayChart.attr("viewBox", `0 0 ${w} ${h}`).attr("preserveAspectRatio","xMidYMid meet");
+  const x = d3.scaleBand().domain(data.map(d => d.name)).range([m.left, w - m.right]).padding(0.18);
+  const y = d3.scaleLinear().domain([0, d3.max(data, d => d.value) * 1.15 || 1]).range([h - m.bottom, m.top]);
+
+  weekdayChart.selectAll("rect.bar-mark").data(data).join("rect")
+    .attr("class","bar-mark")
+    .attr("x", d => x(d.name))
+    .attr("y", h - m.bottom)
+    .attr("width", x.bandwidth())
+    .attr("height", 0)
+    .attr("fill", d => (d.idx === 5 || d.idx === 6) ? "var(--accent-2)" : ACCENT)
+    .attr("opacity", 0.78)
+    .transition().delay((d,i) => i * 40).duration(540).ease(d3.easeCubicOut)
+    .attr("y", d => y(d.value))
+    .attr("height", d => h - m.bottom - y(d.value));
+
+  weekdayChart.selectAll("text.bar-label").data(data).join("text")
+    .attr("class","bar-label")
+    .attr("x", d => x(d.name) + x.bandwidth() / 2).attr("y", h - 8)
+    .attr("text-anchor","middle")
+    .text(d => d.name);
+
+  weekdayChart.selectAll("text.bar-val").data(data).join("text")
+    .attr("class","bar-val")
+    .attr("x", d => x(d.name) + x.bandwidth() / 2)
+    .attr("y", d => y(d.value) - 4)
+    .attr("text-anchor","middle")
+    .style("opacity", 0)
+    .text(d => d.value.toFixed(d.value > 10 ? 0 : 1))
+    .transition().delay((d,i) => 300 + i * 40).duration(400)
+    .style("opacity", 1);
+}
+
+// ============ 月分布 ============
+function renderMonthChart(year, days){
+  monthChart.selectAll("*").remove();
+  const groups = d3.rollup(
+    days.filter(d => byDate.has(d.getTime())),
+    v => d3.sum(v, d => byDate.get(d.getTime())),
+    d => d.getMonth()
+  );
+  const data = d3.range(12).map(i => ({
+    idx: i,
+    name: MONTH_LABELS[i],
+    value: groups.get(i) || 0
+  }));
+
+  const w = 460;
+  const h = 140;
+  const m = {top: 14, right: 8, bottom: 24, left: 8};
+
+  monthChart.attr("viewBox", `0 0 ${w} ${h}`).attr("preserveAspectRatio","xMidYMid meet");
+  const x = d3.scaleBand().domain(data.map(d => d.name)).range([m.left, w - m.right]).padding(0.16);
+  const y = d3.scaleLinear().domain([0, d3.max(data, d => d.value) * 1.15 || 1]).range([h - m.bottom, m.top]);
+
+  monthChart.selectAll("rect.bar-mark").data(data).join("rect")
+    .attr("class","bar-mark")
+    .attr("x", d => x(d.name))
+    .attr("y", h - m.bottom)
+    .attr("width", x.bandwidth())
+    .attr("height", 0)
+    .attr("fill", ACCENT)
+    .attr("opacity", 0.78)
+    .transition().delay((d,i) => i * 28).duration(540).ease(d3.easeCubicOut)
+    .attr("y", d => y(d.value))
+    .attr("height", d => h - m.bottom - y(d.value));
+
+  monthChart.selectAll("text.bar-label").data(data).join("text")
+    .attr("class","bar-label")
+    .attr("x", d => x(d.name) + x.bandwidth() / 2).attr("y", h - 8)
+    .attr("text-anchor","middle")
+    .text(d => d.name);
+}
+
+// ============ 年度总计 ============
+function updateYearStats(year, days){
+  const yearVals = days.map(d => byDate.get(d.getTime())).filter(v => v !== undefined && v > 0);
+  const active = yearVals.length;
+  const total = d3.sum(yearVals);
+  const median = d3.median(yearVals) || 0;
+  const peakIdx = days.findIndex(d => byDate.get(d.getTime()) === d3.max(yearVals));
+  const peakDate = peakIdx >= 0 ? d3.timeFormat("%b %d")(days[peakIdx]) : "—";
+
+  d3.select("#sActive").text(active);
+  d3.select("#sTotal").text(formatNum(total));
+  d3.select("#sPeak").text(peakDate);
+  d3.select("#sMed").text(formatNum(median));
+}
+
+// ============ 详情面板 ============
+const tip = d3.select("#tip");
+function showTip(event, d, v){
+  const wd = d3.timeFormat("%A")(d);
+  tip.select(".tname").text(d3.timeFormat("%B %d, %Y")(d));
+  tip.select(".tpath").text(d3.timeFormat("Week %V · %Y")(d));
+  tip.select(".tv-val").html((v !== undefined ? v.toFixed(v > 10 ? 0 : 2) : "—") + " <span style='color:var(--ink-mute)'>" + UNIT + "</span>");
+  tip.select(".tv-day").text(wd);
+  tip.select(".tbar").style("background", colorFor(v));
+  tip.classed("on", true);
+  tip.style("left", (event.clientX + 18) + "px").style("top", (event.clientY + 18) + "px");
+}
+
+function updateDetail(d, v){
+  if (d === null){
+    d3.select("#dname").text(currentYear + " · year");
+    d3.select("#dpath").text("— overview —");
+    const yvals = parsed.filter(p => p.date.getFullYear() === currentYear).map(p => p.value);
+    const total = d3.sum(yvals);
+    d3.select("#dval").html(formatNum(total) + "<small>" + UNIT + "</small>");
+    d3.select("#drank").html("—<small>/ year</small>");
+    d3.select("#dmed").html("—<small>×</small>");
+    return;
+  }
+  d3.select("#dname").text(d3.timeFormat("%B %d, %Y")(d));
+  d3.select("#dpath").text(d3.timeFormat("%A · week %V")(d));
+  d3.select("#dval").html((v !== undefined ? v.toFixed(v > 10 ? 0 : 2) : "—") + "<small>" + UNIT + "</small>");
+
+  // 当年内排名
+  const yvals = parsed.filter(p => p.date.getFullYear() === currentYear).map(p => p.value).sort((a,b) => b - a);
+  const rank = v !== undefined ? yvals.indexOf(v) + 1 : null;
+  d3.select("#drank").html((rank ? rank : "—") + "<small>/ " + yvals.length + "</small>");
+
+  const yearMed = d3.median(yvals.filter(x => x > 0)) || 1;
+  const ratio = v !== undefined ? (v / yearMed) : null;
+  d3.select("#dmed").html((ratio !== null ? ratio.toFixed(2) : "—") + "<small>×</small>");
+}
+
+function formatNum(n){
+  if (n === 0 || n === undefined) return "0";
+  if (n >= 10000) return (n/1000).toFixed(1) + "k";
+  if (n >= 100)   return n.toFixed(0);
+  return n.toFixed(n > 10 ? 0 : 2);
+}
+
+// ============ 年份切换 ============
+d3.select("#prevYear").on("click", () => {
+  const i = years.indexOf(currentYear);
+  if (i > 0){ currentYear = years[i - 1]; renderCalendar(currentYear); }
+});
+d3.select("#nextYear").on("click", () => {
+  const i = years.indexOf(currentYear);
+  if (i < years.length - 1){ currentYear = years[i + 1]; renderCalendar(currentYear); }
+});
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT") return;
+  if (e.key === "ArrowLeft") d3.select("#prevYear").dispatch("click");
+  if (e.key === "ArrowRight") d3.select("#nextYear").dispatch("click");
+});
+
+// 初始化
+renderCalendar(currentYear);
+</script>
+</body>
+</html>

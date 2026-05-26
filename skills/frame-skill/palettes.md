@@ -1,98 +1,158 @@
-# Palettes for Architecture Diagrams
+# 调色板 Palettes
 
-* Each palette is a **pair set**: every "module color" has a `fill` (light pastel for backgrounds/containers) and a `solid` (saturated version for module blocks of the same family). Borders use the `solid` value at 60-80% opacity, or you can darken `solid` by about 15%.
-* The **neutrals row** is shared across all palettes. Use `arrow` for connectors, `text_primary` for module labels, `text_secondary` for annotations under containers, `bg` as the canvas if you need one.
+每个调色板都是**配对集合**：每个"模块颜色"有 `fill`（浅色，给容器/背景用）和 `solid`（饱和色，给模块块用）。边框用 `solid` 或其 80% 不透明度，或者 `solid` 加深 15%。
 
-## Shared neutrals
+**neutrals 行所有调色板共享**：`arrow` 用于普通连接线，`text_primary` 是模块标签色，`text_secondary` 是注释色，`bg` 是画布背景。
+
+## 共享 neutrals（所有调色板都用）
 
 ```
-arrow            #6B7280   (medium grey, all connectors)
-arrow_dashed     #9CA3AF   (lighter grey, for shortcut/skip lines)
-text_primary     #1F2937   (near-black, all module labels)
-text_secondary   #4B5563   (grey, annotations and dimensions)
-text_white       #FFFFFF   (text inside saturated solid blocks)
-bg               #FFFFFF   (canvas background)
-divider          #E5E7EB   (separator lines if needed)
+arrow            #6B7280   中灰，普通连接线
+arrow_dashed     #9CA3AF   浅灰，跳跃/反馈虚线
+arrow_accent     #DC2626   红，关键回路/重点箭头（用稀疏！）
+text_primary     #1F2937   近黑，模块标签
+text_secondary   #4B5563   灰，注释和尺寸
+text_white       #FFFFFF   饱和色块上的文字
+bg               #FFFFFF   画布背景
+divider          #E5E7EB   分隔线
 ```
 
 ---
 
-## Palette 1: Pastel Academic  *(default)*
+## Palette 1: Pastel Academic *(默认)*
 
-Best for: ML/DL architectures, system diagrams with 4-6 module families. Reads as "modern Chinese journal".
+**适用**：ML/DL 架构、4-6 个模块家族的系统图。视觉印象偏"现代中文期刊"。
 
-| Family   | fill (container) | solid (module) | use case                         |
-| -------- | ---------------- | -------------- | -------------------------------- |
-| blue     | `#DCE7F5`      | `#7BA7D9`    | input layers, data blocks        |
-| mint     | `#D6EBD6`      | `#88C088`    | conv / processing blocks         |
-| peach    | `#FFE0CC`      | `#F0A776`    | pooling, normalization           |
-| pink     | `#FAD6D6`      | `#E89090`    | dropout, regularization, warning |
-| lavender | `#E5D9F2`      | `#B197D6`    | output, FC, classification head  |
-| grey     | `#E5E7EB`      | `#9CA3AF`    | legend, auxiliary, "off" state   |
+| 家族   | fill (容器) | solid (模块) | 用途                              |
+| ------ | ----------- | ------------ | --------------------------------- |
+| blue   | `#DCE7F5` | `#7BA7D9`  | 输入层、数据块                    |
+| mint   | `#D6EBD6` | `#88C088`  | 卷积/处理块                       |
+| peach  | `#FFE0CC` | `#F0A776`  | 池化/归一化                       |
+| pink   | `#FAD6D6` | `#E89090`  | dropout/正则化/警告               |
+| lavender | `#E5D9F2` | `#B197D6` | 输出/FC/分类头                    |
+| grey   | `#E5E7EB` | `#9CA3AF`  | legend/辅助/"off" 状态            |
 
 ---
 
 ## Palette 2: Nature Crisp
 
-Best for: Nature/Cell submissions. Slightly more saturated, cleaner.
+**适用**：Nature/Cell 投稿。比 P1 饱和一点，更干净。
 
-| Family | fill        | solid       | use case         |
-| ------ | ----------- | ----------- | ---------------- |
-| blue   | `#D6E4F0` | `#3B7AB8` | data / input     |
-| green  | `#D8EAD8` | `#5BA85B` | processing       |
-| amber  | `#FBE6C2` | `#E8A53C` | transformation   |
-| rose   | `#F6D5D5` | `#D85F5F` | alert / output   |
-| slate  | `#DDE4EA` | `#5A6B7A` | meta / auxiliary |
+| 家族  | fill        | solid       | 用途             |
+| ----- | ----------- | ----------- | ---------------- |
+| blue  | `#D6E4F0` | `#3B7AB8` | 数据/输入        |
+| green | `#D8EAD8` | `#5BA85B` | 处理             |
+| amber | `#FBE6C2` | `#E8A53C` | 变换             |
+| rose  | `#F6D5D5` | `#D85F5F` | 警告/输出        |
+| slate | `#DDE4EA` | `#5A6B7A` | 元数据/辅助      |
 
 ---
 
 ## Palette 3: IEEE Engineering
 
-Best for: Engineering pipelines, system architectures, robotics. More technical feel.
+**适用**：工程管线、系统架构、机器人。更技术化。
 
-| Family   | fill        | solid       | use case                 |
-| -------- | ----------- | ----------- | ------------------------ |
-| steel    | `#D4DBE5` | `#4A6FA5` | hardware / input         |
-| teal     | `#CFE5E1` | `#3F9285` | computation / processing |
-| orange   | `#F4D9BD` | `#D67D2C` | actuator / output        |
-| crimson  | `#EBC9C9` | `#B0413E` | feedback / control loop  |
-| graphite | `#D9DDE2` | `#52606D` | sensor / measurement     |
+| 家族     | fill        | solid       | 用途                |
+| -------- | ----------- | ----------- | ------------------- |
+| steel    | `#D4DBE5` | `#4A6FA5` | 硬件/输入           |
+| teal     | `#CFE5E1` | `#3F9285` | 计算/处理           |
+| orange   | `#F4D9BD` | `#D67D2C` | 执行器/输出         |
+| crimson  | `#EBC9C9` | `#B0413E` | 反馈/控制回路       |
+| graphite | `#D9DDE2` | `#52606D` | 传感器/测量         |
 
 ---
 
 ## Palette 4: Warm Bio
 
-Best for: Biology / chemistry / medical workflows. Avoids the "cold ML diagram" look.
+**适用**：生物/化学/医学工作流。避免冷冰冰的 ML 风。
 
-| Family     | fill        | solid       | use case                |
-| ---------- | ----------- | ----------- | ----------------------- |
-| terracotta | `#EED2C2` | `#C97B5C` | sample / specimen       |
-| sage       | `#D8E2C9` | `#8AA86B` | reaction / process      |
-| sand       | `#F0E1C2` | `#D4AB52` | reagent / intermediate  |
-| dustyrose  | `#E8CCC9` | `#BC7872` | result / readout        |
-| stone      | `#D9D6CD` | `#7A736B` | environmental / control |
+| 家族       | fill        | solid       | 用途                |
+| ---------- | ----------- | ----------- | ------------------- |
+| terracotta | `#EED2C2` | `#C97B5C` | 样本/标本           |
+| sage       | `#D8E2C9` | `#8AA86B` | 反应/过程           |
+| sand       | `#F0E1C2` | `#D4AB52` | 试剂/中间产物       |
+| dustyrose  | `#E8CCC9` | `#BC7872` | 结果/读出           |
+| stone      | `#D9D6CD` | `#7A736B` | 环境/对照           |
 
 ---
 
 ## Palette 5: High Contrast Mono+Accent
 
-Best for: When the diagram itself is complex and you want one accent to draw the eye. Greys + one bold color.
+**适用**：图本身复杂、想突出一个重点时。灰阶 + 一个亮色。
 
-| Family | fill        | solid       | use case                   |
+| 家族   | fill        | solid       | 用途                       |
 | ------ | ----------- | ----------- | -------------------------- |
-| grey-1 | `#F3F4F6` | `#9CA3AF` | most blocks                |
-| grey-2 | `#E5E7EB` | `#6B7280` | containers                 |
-| grey-3 | `#D1D5DB` | `#4B5563` | secondary blocks           |
-| accent | `#FEE2E2` | `#DC2626` | the ONE highlighted module |
+| grey-1 | `#F3F4F6` | `#9CA3AF` | 大多数普通块               |
+| grey-2 | `#E5E7EB` | `#6B7280` | 容器                       |
+| grey-3 | `#D1D5DB` | `#4B5563` | 次要块                     |
+| accent | `#FEE2E2` | `#DC2626` | 唯一被高亮的模块           |
 
 ---
 
-## How to pick
+## Palette 6: Modern Flat *(新增)*
 
-- User says nothing specific → **Palette 1**.
-- User mentions Nature/Cell/Science or "high-end" → **Palette 2**.
-- User says engineering / pipeline / system / hardware → **Palette 3**.
-- User says biology / chemistry / clinical / wet-lab → **Palette 4**.
-- Diagram has >8 modules of similar weight, or user wants minimal → **Palette 5**.
+**适用**：偏现代设计/UI 风格、博客/演讲/产品文档的架构图。比期刊风更轻、留白多。
 
- **Mixing palettes is forbidden!!!**
+| 家族   | fill        | solid       | 用途                |
+| ------ | ----------- | ----------- | ------------------- |
+| indigo | `#E0E7FF` | `#6366F1` | 主流程/亮点         |
+| cyan   | `#CFFAFE` | `#06B6D4` | 数据/状态           |
+| amber  | `#FEF3C7` | `#F59E0B` | 决策/选择           |
+| emerald | `#D1FAE5` | `#10B981` | 完成/成功           |
+| neutral | `#F3F4F6` | `#6B7280` | 辅助                |
+
+---
+
+## Palette 7: Hand-drawn Watercolor *(新增)*
+
+**适用**：Nature/Cell 里那种水彩感插图风的图。饱和度低、配色偏暖。**适合生命科学+概念示意图**，不适合纯技术架构图。
+
+| 家族       | fill        | solid       | 用途                |
+| ---------- | ----------- | ----------- | ------------------- |
+| sky        | `#CFE3EA` | `#7AA3B0` | 天空/水/背景        |
+| coral      | `#F2D0C0` | `#D49074` | 暖色重点            |
+| moss       | `#D7DFC4` | `#9CAA7C` | 生物组织            |
+| lilac      | `#DDD3E0` | `#9C8AAA` | 抽象概念            |
+| ochre      | `#EDD8B0` | `#C9A862` | 土地/沉淀物         |
+
+用这个调色板时，建议把容器的 `stroke-width` 调到 1.5~2，并把 stroke 颜色稍微调淡（用 fill 色，不用 solid），整体会更有"手绘水彩"的松弛感。
+
+---
+
+## 怎么挑
+
+- 用户没说特别要求 → **Palette 1**
+- 提到 Nature/Cell/Science 或"高端" → **Palette 2**
+- 工程/管线/系统/硬件/机器人 → **Palette 3**
+- 生物/化学/临床/湿实验 → **Palette 4**（严肃）或 **Palette 7**（插图感）
+- 图很复杂、想突出一个重点、做汇报展示 → **Palette 5**
+- 产品文档/blog/演讲/现代风 → **Palette 6**
+
+---
+
+## 混用规则（重点修订）
+
+**默认：一张图只用一个调色板 + 共享 neutrals。** 多色混用会让图变花。
+
+**但允许以下三种例外**：
+
+### 例外 1：accent 高亮
+用 `arrow_accent` (`#DC2626`) 高亮**一个**关键模块、关键箭头、或一行数据。这个红色可以脱离当前调色板使用。**只用一处，否则失效**。
+
+### 例外 2：双轨对比
+双轨布局图（如 baseline vs ours、训练 vs 推理、encoder vs decoder）允许两轨各用一个调色板，前提是两轨颜色家族明显不同（例如上轨用 Palette 3 的 steel 蓝家族，下轨用 Palette 1 的 peach 橙家族）。这样横向对比一目了然，比用同色调的深浅区分清晰得多。
+
+### 例外 3：数据流彩虹（受限）
+当图里有多条数据流需要区分时，每条流用一个独立颜色。前提是：
+- 流不超过 5 条
+- 所有颜色都来自同一调色板（不能跨调色板挑色）
+- 模块本身保持单调色板，只有连接线用彩虹色
+
+---
+
+## 通用配色规则
+
+- **饱和块上的文字用白色，浅块上的文字用 `#1F2937`**。这一条不能破。
+- 边框 = `solid` 色 或其 80% 不透明度。
+- legend 块**永远**用 `bg` (`#FFFFFF`) 填色 + `divider` 边框，不能用饱和色，否则 legend 比主图还跳。
+- 想突出某个模块/行/列 → 用 accent 色（`#DC2626`）描边或填色。**全图只突出 1 个重点**——突出 3 个就等于没突出。

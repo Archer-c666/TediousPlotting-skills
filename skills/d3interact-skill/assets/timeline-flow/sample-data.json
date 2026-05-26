@@ -1,0 +1,33 @@
+[
+  {"channel":"Alice","start":"2024-01-08","end":"2024-01-26","category":"research","label":"User interviews"},
+  {"channel":"Alice","start":"2024-01-29","end":"2024-02-16","category":"design","label":"Wireframes v1"},
+  {"channel":"Alice","start":"2024-02-19","end":"2024-03-08","category":"design","label":"Visual design"},
+  {"channel":"Alice","start":"2024-03-11","end":"2024-03-29","category":"design","label":"Design system"},
+  {"channel":"Alice","start":"2024-04-08","end":"2024-04-26","category":"design","label":"Iteration v2"},
+  {"channel":"Alice","start":"2024-05-13","end":"2024-05-24","category":"research","label":"Usability tests"},
+
+  {"channel":"Bob","start":"2024-01-15","end":"2024-02-09","category":"dev","label":"Backend API"},
+  {"channel":"Bob","start":"2024-02-12","end":"2024-03-15","category":"dev","label":"Auth + DB schema"},
+  {"channel":"Bob","start":"2024-03-18","end":"2024-04-19","category":"dev","label":"Webhook integration"},
+  {"channel":"Bob","start":"2024-04-22","end":"2024-05-10","category":"dev","label":"Performance optimization"},
+  {"channel":"Bob","start":"2024-05-13","end":"2024-05-31","category":"ops","label":"Production rollout"},
+  {"channel":"Bob","start":"2024-06-03","end":"2024-06-21","category":"ops","label":"Monitoring + alerts"},
+
+  {"channel":"Carlos","start":"2024-02-05","end":"2024-03-01","category":"dev","label":"Frontend scaffold"},
+  {"channel":"Carlos","start":"2024-03-04","end":"2024-04-12","category":"dev","label":"Component library"},
+  {"channel":"Carlos","start":"2024-04-15","end":"2024-05-17","category":"dev","label":"Feature build-out"},
+  {"channel":"Carlos","start":"2024-05-20","end":"2024-06-07","category":"dev","label":"Bug fixes + polish"},
+  {"channel":"Carlos","start":"2024-06-10","end":"2024-06-28","category":"design","label":"Onboarding flow"},
+
+  {"channel":"Diana","start":"2024-01-22","end":"2024-02-09","category":"research","label":"Market analysis"},
+  {"channel":"Diana","start":"2024-02-12","end":"2024-03-01","category":"research","label":"Competitor audit"},
+  {"channel":"Diana","start":"2024-03-04","end":"2024-04-05","category":"ops","label":"Pricing model"},
+  {"channel":"Diana","start":"2024-04-08","end":"2024-05-03","category":"ops","label":"Go-to-market plan"},
+  {"channel":"Diana","start":"2024-05-06","end":"2024-05-31","category":"ops","label":"Launch coordination"},
+  {"channel":"Diana","start":"2024-06-03","end":"2024-06-28","category":"research","label":"Post-launch analytics"},
+
+  {"channel":"Eric (QA)","start":"2024-03-25","end":"2024-04-19","category":"dev","label":"Test infrastructure"},
+  {"channel":"Eric (QA)","start":"2024-04-22","end":"2024-05-17","category":"dev","label":"E2E test suite"},
+  {"channel":"Eric (QA)","start":"2024-05-20","end":"2024-06-14","category":"dev","label":"Regression + load tests"},
+  {"channel":"Eric (QA)","start":"2024-06-17","end":"2024-06-28","category":"ops","label":"Release sign-off"}
+]
