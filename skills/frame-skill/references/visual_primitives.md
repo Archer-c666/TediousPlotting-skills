@@ -175,6 +175,7 @@
 全部用 SVG 图元绘制，无任何字体依赖。
 
 ### 试管（sample tube）
+
 ```xml
 <g transform="translate(100, 200)">
   <rect x="0" y="0" width="24" height="60" rx="2"
@@ -187,6 +188,7 @@
 ```
 
 ### 细胞（圆 + 核）
+
 ```xml
 <g transform="translate(200, 200)">
   <circle cx="0" cy="0" r="28" fill="#D8E2C9" stroke="#8AA86B" stroke-width="1.5"/>
@@ -195,6 +197,7 @@
 ```
 
 ### 数据库（圆柱）
+
 ```xml
 <g transform="translate(300, 200)">
   <ellipse cx="30" cy="0" rx="30" ry="8" fill="#4A6FA5"/>
@@ -205,6 +208,7 @@
 ```
 
 ### 云（云服务）
+
 ```xml
 <g transform="translate(400, 200)">
   <path d="M 20 30 Q 0 30 0 20 Q 0 8 12 8 Q 14 0 28 0 Q 42 0 44 12
@@ -214,6 +218,7 @@
 ```
 
 ### 大脑（简化）
+
 ```xml
 <g transform="translate(500, 200)">
   <ellipse cx="30" cy="30" rx="28" ry="24" fill="#FAD6D6" stroke="#E89090" stroke-width="1.5"/>
@@ -224,6 +229,7 @@
 ```
 
 ### 用户/角色（用于泳道左侧标签）
+
 ```xml
 <g transform="translate(80, 200)">
   <circle cx="0" cy="-10" r="8" fill="#7BA7D9"/>
@@ -252,6 +258,7 @@
 cairosvg 渲染时，★ ✓ ✗ ① ↻ 这类符号经常变豆腐框。用下面的 SVG 图元代替：
 
 ### 加号 +（残差连接）
+
 ```xml
 <g transform="translate(800, 300)">
   <circle cx="0" cy="0" r="14" fill="#FAD6D6" stroke="#E89090" stroke-width="2"/>
@@ -260,6 +267,7 @@ cairosvg 渲染时，★ ✓ ✗ ① ↻ 这类符号经常变豆腐框。用下
 ```
 
 ### 乘号 ×（点乘/拼接）
+
 ```xml
 <g transform="translate(800, 400)">
   <circle cx="0" cy="0" r="14" fill="#FFE0CC" stroke="#F0A776" stroke-width="2"/>
@@ -268,6 +276,7 @@ cairosvg 渲染时，★ ✓ ✗ ① ↻ 这类符号经常变豆腐框。用下
 ```
 
 ### 对勾 ✓
+
 ```xml
 <g transform="translate(800, 500)">
   <circle cx="0" cy="0" r="14" fill="#D6EBD6" stroke="#88C088" stroke-width="2"/>
@@ -277,6 +286,7 @@ cairosvg 渲染时，★ ✓ ✗ ① ↻ 这类符号经常变豆腐框。用下
 ```
 
 ### 叉号 ✗
+
 ```xml
 <g transform="translate(800, 600)">
   <circle cx="0" cy="0" r="14" fill="#FAD6D6" stroke="#E89090" stroke-width="2"/>
@@ -286,7 +296,9 @@ cairosvg 渲染时，★ ✓ ✗ ① ↻ 这类符号经常变豆腐框。用下
 ```
 
 ### 圆圈数字 ① ② ③
+
 直接用 circle + text 数字代替（注意：文字数字 1, 2, 3 是 ASCII，不会变豆腐框，可以放心用）：
+
 ```xml
 <g transform="translate(800, 700)">
   <circle cx="0" cy="0" r="14" fill="#7BA7D9"/>
@@ -296,7 +308,9 @@ cairosvg 渲染时，★ ✓ ✗ ① ↻ 这类符号经常变豆腐框。用下
 ```
 
 ### 循环箭头 ↻
+
 用一个带箭头的圆弧代替：
+
 ```xml
 <g transform="translate(800, 800)">
   <path d="M 10 -8 A 12 12 0 1 1 -10 -8"
