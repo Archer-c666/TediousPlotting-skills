@@ -793,7 +793,184 @@ table.preview tbody tr:hover { background: #EEF2FF; }
 .chat-input::placeholder { color: #94A3B8; }
 .send-row {
     display: flex;
-    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+}
+.send-row .spacer { flex: 1; }
+
+/* —— 输入框上方缩略图条 —— */
+.attach-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 6px 0 6px;
+}
+.attach-strip[hidden] { display: none; }
+.attach-thumb {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    border: 1px solid var(--skill-card-border);
+    border-radius: 10px;
+    background: #F8FAFF;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.attach-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.attach-thumb .x {
+    position: absolute;
+    top: 2px; right: 2px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: rgba(15,23,42,0.78);
+    color: white;
+    border: none;
+    font-size: 12px;
+    line-height: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.attach-thumb .x:hover { background: rgba(15,23,42,0.95); }
+.attach-thumb .err-tag {
+    position: absolute;
+    bottom: 2px; left: 2px; right: 2px;
+    background: rgba(185,28,28,0.92);
+    color: white;
+    font-size: 10px;
+    padding: 1px 4px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+/* —— icon 按钮(📎) —— */
+.btn-icon {
+    background: transparent;
+    border: 1px solid var(--skill-card-border);
+    border-radius: 10px;
+    color: var(--text-muted);
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    padding: 0;
+}
+.btn-icon:hover {
+    color: var(--primary-deep);
+    border-color: var(--secondary-border);
+    background: var(--secondary-bg);
+}
+.btn-icon:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+.btn-icon.active {
+    color: var(--primary-deep);
+    background: var(--secondary-bg);
+    border-color: var(--secondary-border);
+}
+
+/* —— 拖拽到输入卡片时高亮 —— */
+.input-card.drag-over {
+    outline: 2px dashed var(--primary-2);
+    outline-offset: -4px;
+    background: #F5F3FF;
+}
+
+/* —— 模型徽标里的视觉标志 —— */
+.model-badge .vision-dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #10B981;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+.model-badge.no-vision .vision-dot {
+    background: #94A3B8;
+}
+
+/* —— Agent 提议的"待确认数据"卡片 —— */
+.propose-card {
+    background: #FFFBEB;
+    border: 1px solid #FDE68A;
+    border-radius: 14px;
+    padding: 14px;
+    max-width: 480px;
+}
+.propose-card .pc-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #92400E;
+    margin-bottom: 4px;
+    letter-spacing: 0.3px;
+}
+.propose-card .pc-name {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--primary-darker);
+    margin-bottom: 4px;
+}
+.propose-card .pc-meta {
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+.propose-card .pc-table-wrap {
+    background: white;
+    border: 1px solid #FDE68A;
+    border-radius: 8px;
+    max-height: 200px;
+    overflow: auto;
+    margin-bottom: 10px;
+}
+.propose-card table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+.propose-card thead th {
+    position: sticky;
+    top: 0;
+    background: #FEF3C7;
+    color: #92400E;
+    padding: 6px 8px;
+    border-bottom: 1px solid #FDE68A;
+    text-align: left;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.propose-card tbody td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #FEF3C7;
+    white-space: nowrap;
+}
+.propose-card .pc-actions {
+    display: flex;
+    gap: 8px;
+}
+.propose-card .pc-actions .btn {
+    padding: 7px 14px;
+    font-size: 13px;
+}
+.propose-card.applied {
+    background: #ECFDF5;
+    border-color: #6EE7B7;
+}
+.propose-card.applied .pc-title {
+    color: #065F46;
+}
+.propose-card.applied .pc-table-wrap {
+    border-color: #6EE7B7;
 }
 
 /* ============================================================
@@ -1141,11 +1318,20 @@ textarea.form-input {
             <div class="chat-scroll scroll" id="chatScroll">
                 <div class="chat-list" id="chatList"></div>
             </div>
-            <div class="input-card">
+            <div class="input-card" id="inputCard">
+                <div class="attach-strip" id="attachStrip" hidden></div>
                 <textarea class="chat-input" id="chatInput"
                     placeholder="和 Agent 描述你的绘图需求,Enter 发送 / Shift+Enter 换行。
-例如:用 df 画小提琴+箱线图;或:画一张双轨对比的架构图(SVG)。"></textarea>
+也可以贴/拖图片(点📎或直接 Ctrl+V),让支持视觉的模型从图中读出数据。"></textarea>
                 <div class="send-row">
+                    <button class="btn-icon" id="btnAttachImage" title="附加图片(可选多张)">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none"
+                             stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                        </svg>
+                    </button>
+                    <div class="spacer"></div>
                     <button class="btn send" id="btnSend">发送</button>
                 </div>
             </div>
@@ -1167,10 +1353,18 @@ textarea.form-input {
             <div class="form-row">
                 <label>服务商预设</label>
                 <select class="form-input" id="cfgPreset">
-                    <option value="OpenAI">OpenAI</option>
-                    <option value="DeepSeek">DeepSeek</option>
-                    <option value="DeepSeek Reasoner">DeepSeek Reasoner</option>
-                    <option value="Anthropic">Anthropic(OpenAI 兼容代理)</option>
+                    <optgroup label="文本">
+                        <option value="OpenAI">OpenAI(gpt-4.1-mini)</option>
+                        <option value="DeepSeek">DeepSeek(deepseek-chat)</option>
+                        <option value="DeepSeek Reasoner">DeepSeek Reasoner</option>
+                        <option value="Anthropic">Anthropic(OpenAI 兼容代理)</option>
+                    </optgroup>
+                    <optgroup label="视觉 · 支持识图">
+                        <option value="OpenAI 视觉(GPT-4o mini)">OpenAI · GPT-4o mini(便宜的视觉)</option>
+                        <option value="OpenAI 视觉(GPT-4o)">OpenAI · GPT-4o(更准的视觉)</option>
+                        <option value="通义千问视觉(Qwen-VL Plus)">通义千问 · Qwen-VL Plus</option>
+                        <option value="通义千问视觉(Qwen-VL Max)">通义千问 · Qwen-VL Max</option>
+                    </optgroup>
                     <option value="Custom">自定义 OpenAI-compatible</option>
                 </select>
             </div>
@@ -1271,6 +1465,7 @@ A,Control,1.2"></textarea>
 </div>
 
 <!-- 隐藏的文件 input -->
+<input type="file" id="fileChatImage" accept="image/*" multiple style="display:none" />
 <input type="file" id="fileSkillDir" webkitdirectory directory multiple style="display:none" />
 <input type="file" id="fileRef" accept=".md,.markdown,.txt,.svg,.py,.json,.html,.htm" multiple style="display:none" />
 <input type="file" id="fileRefDir" webkitdirectory directory multiple style="display:none" />
@@ -2750,11 +2945,38 @@ const Agent = {
 【输出格式 - 重要】
 你的每次回复**必须**是一个严格的 JSON 对象,不要使用 Markdown 代码块包裹整个 JSON,不要写任何解释性前缀或后缀。
 JSON 字段(根据 kind 选择字段):
-- "kind": "code" / "html" / "answer" / "read_template" 四选一。
+- "kind": "code" / "html" / "answer" / "read_template" / "propose_data" 五选一。
 - "message": 给用户看的简短中文说明(始终需要),**只用一两句话**,绝对不要在 message 里塞 \`\`\`python/\`\`\`html 代码块或大段代码。
 - "code":  当 kind=="code" 时必填。一段完整可独立运行的 Python 代码字符串(放到这里,不是 message)。
 - "html":  当 kind=="html" 时必填。一份完整的、可在 <iframe> 中独立运行的交互式 HTML 文本(放到这里,不是 message)。
 - "filename": 当 kind=="read_template" 时必填。要读取的参考文件名(取自 <references> 列表)。
+- "data":  当 kind=="propose_data" 时必填,详见下方"图像识别 / 数据录入"。
+
+【图像识别 / 数据录入 - 当用户在消息里附了图片时】
+1. 用户附图常见目的是:让你**从图片里提取数据**,然后画图或回答问题。
+2. **不要凭空猜数据**;你看到什么就报什么,模糊的字符要诚实标"?"。
+3. 若图是表格/Excel 截图/PDF 表格/手写数据:用 kind="propose_data",在 "data" 字段返回:
+   {
+     "name": "短中文名,描述这份数据,例如 '从截图识别的销售额表'",
+     "columns": ["列名 1", "列名 2", ...],
+     "rows": [
+       ["第1行第1列", "第1行第2列", ...],
+       ...
+     ],
+     "notes": "(可选)关于识别置信度、含糊处、单位、推断列名依据的说明"
+   }
+   columns 必须是字符串;rows 里的单元格如果是数字就用 JS number(不带引号),否则用字符串。
+   "message" 同时简短告知用户"识别到 X 行 Y 列,请确认是否采用为当前数据"。
+   系统会把这份数据作为"待确认"卡片显示在对话里,**用户点采用之前不会替换 df**。
+   用户点采用后,这份数据就会成为后续 \`df\` 变量供绘图使用。
+4. 若图本身是统计图/示意图/架构图,而不是"待录入的表格":
+   - 优先用 kind="answer" 描述你看到什么(图类型、x/y 轴、配色、关键数值),
+     并提议是否要"复刻一份"或者按提取的数值画一张新图。
+   - 如果用户明确说"按这个图重画/把这数据画出来",再走 propose_data 提议数据。
+5. 用户附图但没说目的:先 kind="answer" 简短描述你看到了什么,问一句"要把数据录入吗?要复刻图样吗?"
+6. 涉及隐私(身份证/银行卡/带个人信息的票据):kind="answer",礼貌拒绝识别隐私字段。
+
+【代码编写规则】
 
 【三类产出 - 重要】
 本应用的沙箱能捕获三种产出物,任务驱动二/三选一:
@@ -2891,9 +3113,28 @@ ${dataBlock}`;
      *   artifact = {type:'png', dataUrl} 或 {type:'svg', svg, dataUrl}
      * 返回 {final_message, artifact, code, success}
      */
-    async chat(userMessage, df, onStep) {
+    /**
+     * @param {string} userMessage 用户文字
+     * @param {object|null} df 数据画像
+     * @param {function} onStep 步骤回调
+     * @param {Array<{name,mime,dataUrl}>} attachments 可选,用户上传的图片
+     */
+    async chat(userMessage, df, onStep, attachments) {
         const emit = (s) => { try { onStep && onStep(s); } catch (e) {} };
-        this.history.push({ role: "user", content: userMessage });
+        const hasImg = Array.isArray(attachments) && attachments.length > 0;
+
+        // 加到 history:有图时用 multimodal content(数组形式),无图时还是字符串
+        if (hasImg) {
+            const content = [];
+            // 文字部分(可以空)
+            content.push({ type: "text", text: userMessage || "请分析这张图片里要画的图与数据。" });
+            for (const it of attachments) {
+                content.push({ type: "image_url", image_url: { url: it.dataUrl } });
+            }
+            this.history.push({ role: "user", content });
+        } else {
+            this.history.push({ role: "user", content: userMessage });
+        }
 
         if (!Config.data.api_key) {
             const msg = '尚未配置大模型 API Key,请点击右上角「模型配置」填写后再试。';
@@ -2908,9 +3149,10 @@ ${dataBlock}`;
 
         // 迭代意图检测:如果用户像在"改/再画/换一种风格",把上次成功的产出
         // 作为补充上下文塞到最后一条 user 消息前,但不污染长期 history。
+        // 注意:有图时跳过这个增强(图本身就提供了上下文,塞旧 code 反而干扰)
         const iterRe = /(改|换|再来|再画|重画|调整|加上|去掉|修改|放大|缩小|加粗|改成|变成|加.{0,3}图例|加.{0,3}标题|颜色|配色|字体|字号|视角|交互|hover|tooltip|动画)/;
         const hasPrior = !!(this.lastSuccessfulCode || this.lastSuccessfulHtml);
-        if (hasPrior && iterRe.test(userMessage) && work.length >= 2) {
+        if (!hasImg && hasPrior && iterRe.test(userMessage) && work.length >= 2) {
             const last = work[work.length - 1];
             if (last && last.role === "user") {
                 let priorBlock = "";
@@ -3039,6 +3281,33 @@ ${dataBlock}`;
             message = String(payload.message || "").trim();
         }
 
+        // ===== 分支 0:kind=="propose_data" —— 从图片/文本里抽出的数据,
+        //       让 UI 弹一个"待确认"卡片;用户点采用才会替换 df。 =====
+        if (kind === "propose_data" || (payload.data && (payload.data.columns || payload.data.rows))) {
+            const data = payload.data || {};
+            const cols = Array.isArray(data.columns) ? data.columns.map(String) : [];
+            let rows = Array.isArray(data.rows) ? data.rows : [];
+            // 容错:rows 可能是对象数组而不是二维数组
+            if (rows.length && !Array.isArray(rows[0]) && typeof rows[0] === "object" && rows[0] !== null) {
+                const cs = cols.length ? cols : Object.keys(rows[0]);
+                rows = rows.map(o => cs.map(c => o[c]));
+                if (!cols.length) cols.push(...cs);
+            }
+            const proposed = {
+                name: String(data.name || "识别的数据"),
+                columns: cols,
+                rows,
+                notes: data.notes ? String(data.notes) : "",
+            };
+            const final = message || `识别到 ${rows.length} 行 × ${cols.length} 列。`;
+            emit({ kind: "answer", text: final });
+            this.history.push({
+                role: "assistant",
+                content: `${final}\n(系统已把这份数据作为待确认卡片显示,等待用户点采用)`,
+            });
+            return { final_message: final, proposed_data: proposed, success: true };
+        }
+
         if (kind === "answer" || (!payload.code && !payload.html)) {
             const final = message || "(无内容)";
             emit({ kind: "answer", text: final });
@@ -3165,6 +3434,115 @@ const UI = {
     sending: false,
 };
 
+/* ============================================================
+ *  ChatAttachments — 聊天附件(目前只支持图片)
+ *
+ *  对外接口:
+ *    addFiles(fileList)   接受 File 实例,逐个转 dataURL 加入队列
+ *    clear()              清空(发送后调用)
+ *    list()               返回 [{id, name, dataUrl, size, mime}]
+ *    isEmpty()            是否没有附件
+ *  内部限制:
+ *    单张 ≤ 6 MB(防 base64 后超过 8 MB 的 API 默认上限)
+ *    总数 ≤ 6 张(超出会拒绝)
+ *  注意:为了 OpenAI 多模态消息的兼容性,只接受 image/* 类型。
+ * ============================================================ */
+const ChatAttachments = {
+    _items: [],
+    MAX_ITEMS: 6,
+    MAX_BYTES: 6 * 1024 * 1024,
+
+    list() { return this._items.slice(); },
+    isEmpty() { return this._items.length === 0; },
+    has() { return this._items.length > 0; },
+
+    async addFiles(fileList) {
+        const files = Array.from(fileList || []);
+        const errs = [];
+        for (const f of files) {
+            if (this._items.length >= this.MAX_ITEMS) {
+                errs.push(`最多 ${this.MAX_ITEMS} 张图片,已达上限`);
+                break;
+            }
+            if (!f.type || !f.type.startsWith("image/")) {
+                errs.push(`${f.name || "(未命名)"} 不是图片,已跳过`);
+                continue;
+            }
+            if (f.size > this.MAX_BYTES) {
+                errs.push(`${f.name} 超过 ${Math.round(this.MAX_BYTES/1024/1024)}MB,已跳过`);
+                continue;
+            }
+            try {
+                const dataUrl = await this._readDataUrl(f);
+                this._items.push({
+                    id: uuid(),
+                    name: f.name || "pasted.png",
+                    mime: f.type,
+                    size: f.size,
+                    dataUrl,
+                });
+            } catch (e) {
+                errs.push(`${f.name} 读取失败:${e.message || e}`);
+            }
+        }
+        renderAttachStrip();
+        if (errs.length) showError(errs.join("\n"));
+    },
+
+    /** 接受一个 File 集合的子集移除 */
+    remove(id) {
+        this._items = this._items.filter(it => it.id !== id);
+        renderAttachStrip();
+    },
+
+    clear() {
+        this._items = [];
+        renderAttachStrip();
+    },
+
+    /** 转 OpenAI 多模态 content blocks */
+    toContentBlocks(textPrompt) {
+        const blocks = [];
+        if (textPrompt && textPrompt.trim()) {
+            blocks.push({ type: "text", text: textPrompt });
+        } else {
+            // 即使没文字也至少塞一条提示,免得纯图片让模型不知所措
+            blocks.push({ type: "text", text: "请分析这张图片里要画的图与数据。" });
+        }
+        for (const it of this._items) {
+            blocks.push({
+                type: "image_url",
+                image_url: { url: it.dataUrl },
+            });
+        }
+        return blocks;
+    },
+
+    /** 给历史摘要用的紧凑表示:不存 base64,只记"用户发了 N 张图" */
+    toHistorySummary(textPrompt) {
+        const n = this._items.length;
+        if (!n) return textPrompt || "";
+        const tail = `(同时上传了 ${n} 张图片)`;
+        return textPrompt ? `${textPrompt}\n${tail}` : tail;
+    },
+
+    _readDataUrl(file) {
+        return new Promise((resolve, reject) => {
+            const r = new FileReader();
+            r.onload = () => resolve(r.result);
+            r.onerror = () => reject(new Error("FileReader 失败"));
+            r.readAsDataURL(file);
+        });
+    },
+};
+
+/* —— Vision-capable 模型识别表 ——
+ * 模型名只要"看起来像 vision",就给绿色徽标。这是粗略提示,不影响功能。 */
+const VISION_RE = /\b(4o|4\.1(?!\s*-?mini\b)|4o-mini|vision|vl-|vl_|claude.*-?sonnet|claude.*-?opus|claude.*-?haiku|gemini|qwen.*vl)/i;
+function modelLooksVisionCapable(model) {
+    return VISION_RE.test(String(model || ""));
+}
+
 
 /* ============== 顶栏 / 模型徽标 ============== */
 function updateModelBadge() {
@@ -3173,8 +3551,11 @@ function updateModelBadge() {
         badge.textContent = "⚠️ 未配置模型";
         badge.className = "model-badge warn";
     } else {
-        badge.textContent = `模型:${Config.data.model}`;
-        badge.className = "model-badge";
+        const vis = modelLooksVisionCapable(Config.data.model);
+        badge.className = "model-badge" + (vis ? "" : " no-vision");
+        badge.innerHTML =
+            `<span class="vision-dot" title="${vis ? '看起来支持图像输入' : '看起来不支持图像输入,贴图可能无法识别'}"></span>` +
+            escapeHtml(`模型:${Config.data.model}`);
     }
     updateLLMStatusLine();
 }
@@ -3596,15 +3977,52 @@ $("#btnCopyCode").onclick = async () => {
 
 
 /* ============== 右栏 - 聊天 ============== */
-function postUser(text) {
+function postUser(text, attachments) {
     const list = $("#chatList");
     const row = el("div", { class: "bubble-row user" });
     const b = el("div", { class: "bubble user" });
     b.appendChild(el("span", { class: "role-tag", text: "你" }));
-    b.appendChild(el("div", { text }));
+    if (text) {
+        b.appendChild(el("div", { text }));
+    }
+    if (attachments && attachments.length) {
+        const strip = el("div", {
+            style: "display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;",
+        });
+        for (const it of attachments) {
+            const img = el("img", {
+                src: it.dataUrl,
+                alt: it.name,
+                title: it.name,
+                style: "max-width:120px; max-height:120px; border-radius:8px; "
+                     + "border: 1px solid rgba(255,255,255,0.35); object-fit:cover; cursor:pointer; display:block;",
+                onclick: () => openImageLightbox(it.dataUrl, it.name),
+            });
+            strip.appendChild(img);
+        }
+        b.appendChild(strip);
+    }
     row.appendChild(b);
     list.appendChild(row);
     scrollChatToEnd();
+}
+
+/** 简易 lightbox:点击聊天里的小图把它放大显示在浮层中 */
+function openImageLightbox(src, name) {
+    const mask = el("div", {
+        style: "position:fixed; inset:0; background:rgba(15,23,42,0.78); "
+             + "display:flex; align-items:center; justify-content:center; z-index:3000; "
+             + "padding:24px; cursor:zoom-out;",
+        onclick: () => mask.remove(),
+    });
+    const img = el("img", {
+        src,
+        alt: name || "image",
+        style: "max-width:96vw; max-height:90vh; border-radius:8px; "
+             + "box-shadow:0 16px 64px rgba(0,0,0,0.4); background:white;",
+    });
+    mask.appendChild(img);
+    document.body.appendChild(mask);
 }
 function postAgent(text) {
     const list = $("#chatList");
@@ -3622,6 +4040,101 @@ function postSystem(text) {
     row.style.justifyContent = "center";
     const b = el("div", { class: "bubble system", text });
     row.appendChild(b);
+    list.appendChild(row);
+    scrollChatToEnd();
+}
+
+/** 把 Agent 提议的数据渲染成卡片,带"采用"按钮 */
+function postProposeDataCard(proposed) {
+    const list = $("#chatList");
+    const row = el("div", { class: "bubble-row" });
+    const card = el("div", { class: "propose-card" });
+    const title = el("div", { class: "pc-title", text: "📋 待确认数据(从你的图片/输入识别)" });
+    const name  = el("div", { class: "pc-name",  text: proposed.name });
+    const meta  = el("div", { class: "pc-meta",
+        text: `${proposed.rows.length} 行 × ${proposed.columns.length} 列${proposed.notes ? "  ·  " + proposed.notes : ""}`,
+    });
+    card.appendChild(title);
+    card.appendChild(name);
+    card.appendChild(meta);
+
+    // 小预览表(最多 8 行)
+    const wrap = el("div", { class: "pc-table-wrap" });
+    const tbl = el("table");
+    const thead = el("thead");
+    const trh = el("tr");
+    for (const c of proposed.columns) trh.appendChild(el("th", { text: String(c) }));
+    thead.appendChild(trh);
+    tbl.appendChild(thead);
+    const tbody = el("tbody");
+    const showRows = proposed.rows.slice(0, 8);
+    for (const r of showRows) {
+        const tr = el("tr");
+        for (const c of proposed.columns) {
+            // r 可能是数组或对象
+            const v = Array.isArray(r) ? r[proposed.columns.indexOf(c)] : r[c];
+            tr.appendChild(el("td", { text: v === null || v === undefined ? "" : String(v) }));
+        }
+        tbody.appendChild(tr);
+    }
+    tbl.appendChild(tbody);
+    wrap.appendChild(tbl);
+    card.appendChild(wrap);
+    if (proposed.rows.length > 8) {
+        const more = el("div", {
+            style: "color: var(--text-muted); font-size: 11px; margin-bottom: 8px; text-align: right;",
+            text: `… 还有 ${proposed.rows.length - 8} 行未在预览中显示`,
+        });
+        card.appendChild(more);
+    }
+
+    // 操作按钮
+    const actions = el("div", { class: "pc-actions" });
+    const adopt = el("button", { class: "btn", text: "✓ 采用为当前数据" });
+    const cancel = el("button", { class: "btn secondary", text: "忽略" });
+    actions.appendChild(adopt);
+    actions.appendChild(cancel);
+    card.appendChild(actions);
+
+    adopt.onclick = () => {
+        try {
+            // 把 cells 全部尝试数值化(LLM 可能把 1.23 写成 "1.23")
+            const cleanRows = proposed.rows.map(r => {
+                const o = {};
+                proposed.columns.forEach((c, i) => {
+                    let v = Array.isArray(r) ? r[i] : r[c];
+                    if (typeof v === "string") {
+                        const t = v.trim();
+                        if (t !== "" && t !== "?" && !isNaN(Number(t))) v = Number(t);
+                    }
+                    o[c] = v ?? null;
+                });
+                return o;
+            });
+            DataProject.loadFromObjects(cleanRows, proposed.name);
+            renderDataStatus();
+            renderTablePreview();
+            // 切到数据预览 tab,让用户立即看到生效
+            $$(".tab[data-tab]").forEach(t => t.classList.toggle("active", t.getAttribute("data-tab") === "data"));
+            $$(".tab-page").forEach(p => p.classList.toggle("active", p.getAttribute("data-tab") === "data"));
+            card.classList.add("applied");
+            title.textContent = "✅ 已采用为当前数据";
+            actions.remove();
+            postSystem(`已采用「${proposed.name}」(${cleanRows.length} 行 × ${proposed.columns.length} 列),现在可以让 Agent 用它绘图。`);
+        } catch (err) {
+            showError("采用失败:" + (err.message || err));
+        }
+    };
+    cancel.onclick = () => {
+        card.classList.add("applied");
+        card.style.background = "#F1F5F9";
+        card.style.borderColor = "#CBD5E1";
+        title.textContent = "已忽略";
+        title.style.color = "#475569";
+        actions.remove();
+    };
+
+    row.appendChild(card);
     list.appendChild(row);
     scrollChatToEnd();
 }
@@ -3675,12 +4188,90 @@ $("#chatInput").addEventListener("keydown", (e) => {
         sendChat();
     }
 });
+/* ============== 聊天附件:UI 渲染 + 事件绑定 ============== */
+function renderAttachStrip() {
+    const strip = $("#attachStrip");
+    strip.innerHTML = "";
+    const items = ChatAttachments.list();
+    if (!items.length) {
+        strip.hidden = true;
+        return;
+    }
+    strip.hidden = false;
+    for (const it of items) {
+        const thumb = el("div", { class: "attach-thumb", title: it.name });
+        const img = el("img", { src: it.dataUrl, alt: it.name });
+        const x = el("button", {
+            class: "x",
+            type: "button",
+            title: "移除",
+            text: "×",
+            onclick: () => ChatAttachments.remove(it.id),
+        });
+        thumb.appendChild(img);
+        thumb.appendChild(x);
+        if (!modelLooksVisionCapable(Config.data.model)) {
+            // 提醒一下:当前模型可能不识图
+            thumb.appendChild(el("div", { class: "err-tag", text: "非视觉模型" }));
+        }
+        strip.appendChild(thumb);
+    }
+}
+
+// 选择图片
+$("#btnAttachImage").onclick = () => $("#fileChatImage").click();
+$("#fileChatImage").addEventListener("change", async (e) => {
+    await ChatAttachments.addFiles(e.target.files);
+    e.target.value = "";
+});
+
+// 粘贴(Ctrl+V)
+$("#chatInput").addEventListener("paste", async (e) => {
+    if (!e.clipboardData) return;
+    const imgs = [];
+    for (const it of e.clipboardData.items) {
+        if (it.kind === "file" && it.type.startsWith("image/")) {
+            const f = it.getAsFile();
+            if (f) imgs.push(f);
+        }
+    }
+    if (imgs.length) {
+        e.preventDefault();
+        await ChatAttachments.addFiles(imgs);
+    }
+});
+
+// 拖拽到输入卡片
+(function bindDnD() {
+    const card = $("#inputCard");
+    if (!card) return;
+    const enter = (e) => {
+        if (e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files")) {
+            e.preventDefault();
+            card.classList.add("drag-over");
+        }
+    };
+    const leave = () => card.classList.remove("drag-over");
+    card.addEventListener("dragenter", enter);
+    card.addEventListener("dragover", enter);
+    card.addEventListener("dragleave", leave);
+    card.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        leave();
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+            await ChatAttachments.addFiles(e.dataTransfer.files);
+        }
+    });
+})();
+
 $("#btnSend").onclick = sendChat;
 
 async function sendChat() {
     const ta = $("#chatInput");
     const text = ta.value.trim();
-    if (!text) return;
+    const hasAttach = ChatAttachments.has();
+    // 必须有文字或图片之一才发
+    if (!text && !hasAttach) return;
     if (UI.sending) {
         showError("请等待上一次对话完成。");
         return;
@@ -3690,9 +4281,17 @@ async function sendChat() {
         openModal("modalConfig");
         return;
     }
+    if (hasAttach && !modelLooksVisionCapable(Config.data.model)) {
+        // 不强制拦截(因为 VISION_RE 是粗判),但醒目提示一次
+        showError("当前模型看起来不支持图像输入,识别可能失败。建议切到 gpt-4o-mini / claude-sonnet / qwen-vl 等。");
+    }
 
+    // 准备这一轮要发的东西
+    const attachments = ChatAttachments.list();   // 复制一份,清空 strip 后还能用
+    const displayText = text || (attachments.length ? `(上传了 ${attachments.length} 张图片)` : "");
     ta.value = "";
-    postUser(text);
+    ChatAttachments.clear();
+    postUser(displayText, attachments);
     UI.currentThinking = startThinking();
 
     UI.sending = true;
@@ -3701,8 +4300,12 @@ async function sendChat() {
     sendBtn.textContent = "生成中…";
 
     try {
-        const turn = await Agent.chat(text, DataProject.brief(), onAgentStep);
+        const turn = await Agent.chat(text, DataProject.brief(), onAgentStep, attachments);
         if (turn.final_message) postAgent(turn.final_message);
+        // 如果 Agent 提议了一份新数据,渲染卡片
+        if (turn.proposed_data) {
+            postProposeDataCard(turn.proposed_data);
+        }
     } catch (e) {
         postAgent("出错:" + (e.message || String(e)));
     } finally {
@@ -4043,9 +4646,13 @@ $("#fileRefDir").addEventListener("change", async (e) => {
 /* ============== 模型配置 ============== */
 const PRESETS = {
     "OpenAI": { base_url: "https://api.openai.com/v1", model: "gpt-4.1-mini" },
+    "OpenAI 视觉(GPT-4o mini)": { base_url: "https://api.openai.com/v1", model: "gpt-4o-mini" },
+    "OpenAI 视觉(GPT-4o)":       { base_url: "https://api.openai.com/v1", model: "gpt-4o" },
     "DeepSeek": { base_url: "https://api.deepseek.com", model: "deepseek-chat" },
     "DeepSeek Reasoner": { base_url: "https://api.deepseek.com", model: "deepseek-reasoner" },
     "Anthropic": { base_url: "", model: "claude-sonnet-4-5" },
+    "通义千问视觉(Qwen-VL Plus)":  { base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1", model: "qwen-vl-plus" },
+    "通义千问视觉(Qwen-VL Max)":   { base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1", model: "qwen-vl-max" },
     "Custom": { base_url: "", model: "" },
 };
 
@@ -4056,15 +4663,21 @@ function openConfigDialog() {
     $("#cfgModel").value = Config.data.model;
     $("#cfgApiKey").value = Config.data.api_key;
     $("#cfgTimeout").value = Config.data.timeout;
-    if (/deepseek/i.test(Config.data.base_url)) {
-        $("#cfgPreset").value = /reasoner/i.test(Config.data.model) ? "DeepSeek Reasoner" : "DeepSeek";
-    } else if (/anthropic/i.test(Config.data.base_url)) {
-        $("#cfgPreset").value = "Anthropic";
-    } else if (/openai/i.test(Config.data.base_url)) {
-        $("#cfgPreset").value = "OpenAI";
-    } else {
-        $("#cfgPreset").value = "Custom";
+    const url = Config.data.base_url || "";
+    const model = Config.data.model || "";
+    let preset = "Custom";
+    if (/deepseek/i.test(url)) {
+        preset = /reasoner/i.test(model) ? "DeepSeek Reasoner" : "DeepSeek";
+    } else if (/anthropic/i.test(url)) {
+        preset = "Anthropic";
+    } else if (/dashscope/i.test(url)) {
+        preset = /vl-max/i.test(model) ? "通义千问视觉(Qwen-VL Max)" : "通义千问视觉(Qwen-VL Plus)";
+    } else if (/openai/i.test(url)) {
+        if (/4o-mini/i.test(model))   preset = "OpenAI 视觉(GPT-4o mini)";
+        else if (/^gpt-4o\b/i.test(model)) preset = "OpenAI 视觉(GPT-4o)";
+        else preset = "OpenAI";
     }
+    $("#cfgPreset").value = preset;
     openModal("modalConfig");
 }
 
