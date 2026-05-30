@@ -2952,6 +2952,18 @@ JSON 字段(根据 kind 选择字段):
 - "filename": 当 kind=="read_template" 时必填。要读取的参考文件名(取自 <references> 列表)。
 - "data":  当 kind=="propose_data" 时必填,详见下方"图像识别 / 数据录入"。
 
+【JSON 合法性 - 极其重要】
+你的整个回复必须能被 \`JSON.parse()\` 直接解析。常见错误及禁令:
+1. **字符串内的换行必须用 \`\\n\` 转义**,**绝对不能**在 JSON 字符串里直接换行
+   (例如 "code":"import os\\nimport sys\\n..." 而不是 "code":"import os
+   import sys")。
+2. **字符串内的双引号必须 \`\\"\` 转义**,不要让它提前终止字符串。
+3. **不要把 JSON 包在 \`\`\`json ... \`\`\` 之类的 markdown fence 里**。
+4. **不要在 JSON 前后写解释文字**(包括"以下是 JSON:"之类的话)。
+5. Python 代码里如有 SVG/HTML 多行字符串,在 JSON 序列化时**所有换行都要写成 \`\\n\`**;
+   你可以把代码写成单行用 \`\\n\` 连接,也可以用 Python 三引号 \`'''...'''\`,
+   但**三引号内部的换行在 JSON "code" 字段里仍必须是 \`\\n\` 字面量**。
+
 【图像识别 / 数据录入 - 当用户在消息里附了图片时】
 1. 用户附图常见目的是:让你**从图片里提取数据**,然后画图或回答问题。
 2. **不要凭空猜数据**;你看到什么就报什么,模糊的字符要诚实标"?"。
@@ -2988,7 +3000,11 @@ B. 矢量架构图 / 流程图 / 框架图(SVG):走 kind=="code",直接用 Pytho
    with open(SVG_OUTPUT_PATH, "w", encoding="utf-8") as f:
        f.write(svg)
    \`\`\`
-   其中 \`SVG_OUTPUT_PATH\` 是沙箱已注入的全局变量(值为 "/output.svg")。
+   ⚠️ 关于 \`SVG_OUTPUT_PATH\`(同理 \`HTML_OUTPUT_PATH\`):
+   - 它是沙箱**已经直接注入到全局命名空间**的字符串变量,值固定为 \`"/output.svg"\`。
+   - 你的代码可以直接像普通局部变量一样使用 \`SVG_OUTPUT_PATH\`,**不需要** \`import os\`,
+     **不要**写 \`os.environ.get('SVG_OUTPUT_PATH', ...)\` —— 它不是环境变量。
+   - 直接 \`with open(SVG_OUTPUT_PATH, "w") as f: f.write(svg)\` 即可。
    只要 /output.svg 被写入且非空,沙箱就优先把它作为矢量产出渲染(可无限缩放、文字清晰)。
    架构图/流程图任务请优先走 B(SVG),不要用 matplotlib 硬画方框箭头。
 C. 交互式 HTML 图表(可悬停 tooltip / 筛选 / 动画 / 联动多视图):**两条路任选,根据是否需要数据预处理**:
@@ -3068,14 +3084,82 @@ ${dataBlock}`;
     parsePayload(raw) {
         if (raw == null) return { kind: "answer", message: "(空响应)" };
         let text = String(raw).trim();
-        // 去 markdown fence
-        text = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "");
-        try { return JSON.parse(text); } catch (e) { /* try next */ }
-        const m = /\{[\s\S]*\}/.exec(text);
-        if (m) {
-            try { return JSON.parse(m[0]); } catch (e) { /* try next */ }
+
+        // 1. 剥 markdown fence(无论开头还是内部)
+        //    形如 ```json\n{...}\n```  /  ```\n{...}\n```
+        const fenceMatch = /```(?:json|JSON)?\s*\n?([\s\S]*?)\n?```/.exec(text);
+        if (fenceMatch) {
+            text = fenceMatch[1].trim();
         }
+
+        // 2. 直接尝试
+        try { return JSON.parse(text); } catch (e) { /* fall through */ }
+
+        // 3. 平衡括号扫描:从第一个 '{' 起,跟踪嵌套深度与字符串状态,
+        //    找出第一个真正闭合的 {...} 块。这比 /\{[\s\S]*\}/ 贪婪正则准得多——
+        //    后者会把 JSON 后面解释文字里的 '}' 也吞进来导致仍然 parse 失败。
+        const block = this._extractFirstJSONBlock(text);
+        if (block) {
+            try { return JSON.parse(block); } catch (e) { /* fall through to repair */ }
+            // 3.5 容错修复:LLM 常在字符串内放真实换行/制表,转成 \n / \t 再试
+            const repaired = this._repairJSONStringEscapes(block);
+            try { return JSON.parse(repaired); } catch (e) { /* fall through */ }
+        }
+
+        // 兜底:把整段当 answer
         return { kind: "answer", message: text };
+    },
+
+    /** 从噪声文本里抠出第一个语法平衡的 {...} 块 */
+    _extractFirstJSONBlock(text) {
+        const start = text.indexOf("{");
+        if (start < 0) return null;
+        let depth = 0;
+        let inStr = false;
+        let strCh = "";
+        let esc = false;
+        for (let i = start; i < text.length; i++) {
+            const c = text[i];
+            if (inStr) {
+                if (esc) { esc = false; continue; }
+                if (c === "\\") { esc = true; continue; }
+                if (c === strCh) { inStr = false; }
+                continue;
+            }
+            if (c === '"' || c === "'") { inStr = true; strCh = c; continue; }
+            if (c === "{") depth++;
+            else if (c === "}") {
+                depth--;
+                if (depth === 0) return text.slice(start, i + 1);
+            }
+        }
+        return null;
+    },
+
+    /** 修复 LLM 常见的"字符串字面量里有真实换行/制表符"问题。
+     *  策略:扫描字符串区段,把里面的 \r\n / \n / \t 替换成转义。
+     *  不动字符串外的字符。 */
+    _repairJSONStringEscapes(text) {
+        let out = "";
+        let inStr = false;
+        let esc = false;
+        for (let i = 0; i < text.length; i++) {
+            const c = text[i];
+            if (inStr) {
+                if (esc) { out += c; esc = false; continue; }
+                if (c === "\\") { out += c; esc = true; continue; }
+                if (c === '"') { out += c; inStr = false; continue; }
+                // 关键修复点:字符串内的真实控制字符替换为 JSON 转义
+                if (c === "\n") { out += "\\n"; continue; }
+                if (c === "\r") { out += "\\r"; continue; }
+                if (c === "\t") { out += "\\t"; continue; }
+                out += c;
+            } else {
+                if (c === '"') { inStr = true; out += c; continue; }
+                out += c;
+            }
+        }
+        return out;
     },
 
     async callLLM(messages) {
