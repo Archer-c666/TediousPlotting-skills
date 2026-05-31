@@ -4,12 +4,11 @@
 
 ## 更多绘图Skills持续蒸馏中...
 
-AI绘制的统计图老达不到理想？        
-大模型太费token？              
-需求与出图相违背？                        
-快速为数据建模竞赛，科研一键自动化配图？            
+| AI绘制的统计图老达不到理想？ | 大模型太费token？                                                 |
+| ---------------------------- | ----------------------------------------------------------------- |
+| **需求与出图相违背？** | **快速为数据分析建模竞赛/科研/大学课程实验一键自动化配图?** |
 
-试试这些skills！将高质量期刊级别图表，流程架构图，亦或是交互式图表以及高性能AI的绘图逻辑联合蒸馏成的一份可在本地agent/claw进行绘制的技能。
+试试这些skills！将高质量期刊级别图表，流程架构图，亦或是交互式图表以及高性能AI的绘图逻辑联合蒸馏成的一份可在**codex/ClaudeCode/Openclaw**进行绘制的技能。
 
 ***它可以用在你的期刊论文，竞赛，PPT等！甚至是企业公司，金融分析的可视化展示！***
 
@@ -31,7 +30,7 @@ git clone https://github.com/Archer-Ming/TediousPlotting-skills.git
 
 ***miniAgent逐步完善且成为了一个重要分支！它现在支持PNG/SVG/HTML输出***
 
-或者使用我们开发的网页 ***miniAgent*（支撑skills测试和体验！持续开发改进中(0v0) ）**，为此你只需要接入大模型密钥即可体验！它支持*deepseek*和*OpenAI*
+或者使用我们开发的网页 ***miniAgent*（支撑skills测试和体验！持续开发改进中(0v0) ）**，为此你只需要接入大模型密钥即可体验！它支持*deepseek*和*OpenAI大模型*
 
 *具体说明参考见：*         [miniAgent介绍](./miniAgent/README.md)
 
@@ -143,6 +142,10 @@ frame-skill/                               针对SCI论文，竞赛的高质量�
   <tr>
     <td><img src="skills\frame-skill\assets\reference4.png" width="800"></td>
     <td><img src="skills\frame-skill\assets\reference5.png" width="800"></td>
+  </tr>
+  <tr>
+    <td><img src="example\frame-1.svg" width="800"></td>
+    <td><img src="example\frame-2.svg" width="800"></td>
   </tr>
 </table>
 

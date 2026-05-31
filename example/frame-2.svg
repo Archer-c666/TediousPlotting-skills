@@ -1,0 +1,169 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 700"
+     font-family="'Noto Sans CJK SC', 'SimHei', 'Times New Roman', serif">
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6B7280"/>
+    </marker>
+    <marker id="arrow_dash" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#9CA3AF"/>
+    </marker>
+    <marker id="arrow_accent" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#DC2626"/>
+    </marker>
+  </defs>
+
+  <!-- 标题区 -->
+  <text x="800" y="55" text-anchor="middle" font-size="28" font-weight="bold" fill="#1F2937">
+    学好 Agent 的六步学习路线图
+  </text>
+  <text x="800" y="82" text-anchor="middle" font-size="14" fill="#6B7280" font-style="italic">
+    从基础理论到自主智能体 · 循序渐进
+  </text>
+
+  <!-- ===== STAGE 1: 基础理论 ===== -->
+  <g>
+    <rect x="40" y="180" width="220" height="170" rx="14"
+          fill="#DCE7F5" stroke="#7BA7D9" stroke-width="2.5"/>
+    <circle cx="70" cy="210" r="20" fill="#7BA7D9"/>
+    <text x="70" y="217" text-anchor="middle" font-size="18" font-weight="bold" fill="#FFFFFF">1</text>
+    <text x="150" y="217" text-anchor="middle" font-size="17" font-weight="bold" fill="#1F2937">
+      基础理论
+    </text>
+    <line x1="60" y1="240" x2="240" y2="240" stroke="#7BA7D9" stroke-width="1" opacity="0.5"/>
+    <text x="150" y="268" text-anchor="middle" font-size="13" fill="#1F2937">LLM 原理</text>
+    <text x="150" y="290" text-anchor="middle" font-size="13" fill="#1F2937">Prompt Engineering</text>
+    <text x="150" y="312" text-anchor="middle" font-size="13" fill="#1F2937">工具调用基础</text>
+    <text x="150" y="334" text-anchor="middle" font-size="13" fill="#1F2937">ReAct 范式</text>
+  </g>
+
+  <!-- ===== STAGE 2: 框架实践 ===== -->
+  <g>
+    <rect x="310" y="180" width="220" height="170" rx="14"
+          fill="#D6EBD6" stroke="#88C088" stroke-width="2.5"/>
+    <circle cx="340" cy="210" r="20" fill="#88C088"/>
+    <text x="340" y="217" text-anchor="middle" font-size="18" font-weight="bold" fill="#FFFFFF">2</text>
+    <text x="420" y="217" text-anchor="middle" font-size="17" font-weight="bold" fill="#1F2937">
+      框架实践
+    </text>
+    <line x1="330" y1="240" x2="510" y2="240" stroke="#88C088" stroke-width="1" opacity="0.5"/>
+    <text x="420" y="268" text-anchor="middle" font-size="13" fill="#1F2937">LangChain / CrewAI</text>
+    <text x="420" y="290" text-anchor="middle" font-size="13" fill="#1F2937">工具定义与调用</text>
+    <text x="420" y="312" text-anchor="middle" font-size="13" fill="#1F2937">记忆机制</text>
+    <text x="420" y="334" text-anchor="middle" font-size="13" fill="#1F2937">多 Agent 协作</text>
+  </g>
+
+  <!-- ===== STAGE 3: 规划与推理 ===== -->
+  <g>
+    <rect x="580" y="180" width="220" height="170" rx="14"
+          fill="#FFE0CC" stroke="#F0A776" stroke-width="2.5"/>
+    <circle cx="610" cy="210" r="20" fill="#F0A776"/>
+    <text x="610" y="217" text-anchor="middle" font-size="18" font-weight="bold" fill="#FFFFFF">3</text>
+    <text x="690" y="217" text-anchor="middle" font-size="17" font-weight="bold" fill="#1F2937">
+      规划与推理
+    </text>
+    <line x1="600" y1="240" x2="780" y2="240" stroke="#F0A776" stroke-width="1" opacity="0.5"/>
+    <text x="690" y="268" text-anchor="middle" font-size="13" fill="#1F2937">Chain-of-Thought</text>
+    <text x="690" y="290" text-anchor="middle" font-size="13" fill="#1F2937">任务分解</text>
+    <text x="690" y="312" text-anchor="middle" font-size="13" fill="#1F2937">自我反思</text>
+    <text x="690" y="334" text-anchor="middle" font-size="13" fill="#1F2937">Tree-of-Thought</text>
+  </g>
+
+  <!-- ===== STAGE 4: 工具与记忆 ===== -->
+  <g>
+    <rect x="850" y="180" width="220" height="170" rx="14"
+          fill="#E5D9F2" stroke="#B197D6" stroke-width="2.5"/>
+    <circle cx="880" cy="210" r="20" fill="#B197D6"/>
+    <text x="880" y="217" text-anchor="middle" font-size="18" font-weight="bold" fill="#FFFFFF">4</text>
+    <text x="960" y="217" text-anchor="middle" font-size="17" font-weight="bold" fill="#1F2937">
+      工具与记忆
+    </text>
+    <line x1="870" y1="240" x2="1050" y2="240" stroke="#B197D6" stroke-width="1" opacity="0.5"/>
+    <text x="960" y="268" text-anchor="middle" font-size="13" fill="#1F2937">RAG 检索增强</text>
+    <text x="960" y="290" text-anchor="middle" font-size="13" fill="#1F2937">向量数据库</text>
+    <text x="960" y="312" text-anchor="middle" font-size="13" fill="#1F2937">API 集成</text>
+    <text x="960" y="334" text-anchor="middle" font-size="13" fill="#1F2937">长期/短期记忆</text>
+  </g>
+
+  <!-- ===== STAGE 5: 评估与优化 ===== -->
+  <g>
+    <rect x="1120" y="180" width="220" height="170" rx="14"
+          fill="#FAD6D6" stroke="#E89090" stroke-width="2.5"/>
+    <circle cx="1150" cy="210" r="20" fill="#E89090"/>
+    <text x="1150" y="217" text-anchor="middle" font-size="18" font-weight="bold" fill="#FFFFFF">5</text>
+    <text x="1230" y="217" text-anchor="middle" font-size="17" font-weight="bold" fill="#1F2937">
+      评估与优化
+    </text>
+    <line x1="1140" y1="240" x2="1320" y2="240" stroke="#E89090" stroke-width="1" opacity="0.5"/>
+    <text x="1230" y="268" text-anchor="middle" font-size="13" fill="#1F2937">Benchmark 测试</text>
+    <text x="1230" y="290" text-anchor="middle" font-size="13" fill="#1F2937">错误分析</text>
+    <text x="1230" y="312" text-anchor="middle" font-size="13" fill="#1F2937">Prompt 调优</text>
+    <text x="1230" y="334" text-anchor="middle" font-size="13" fill="#1F2937">成本控制</text>
+  </g>
+
+  <!-- ===== STAGE 6: 自主智能体 ===== -->
+  <g>
+    <rect x="1390" y="180" width="170" height="170" rx="14"
+          fill="#E5E7EB" stroke="#9CA3AF" stroke-width="2.5"/>
+    <circle cx="1415" cy="210" r="20" fill="#9CA3AF"/>
+    <text x="1415" y="217" text-anchor="middle" font-size="18" font-weight="bold" fill="#FFFFFF">6</text>
+    <text x="1475" y="217" text-anchor="middle" font-size="17" font-weight="bold" fill="#1F2937">
+      自主智能体
+    </text>
+    <line x1="1405" y1="240" x2="1545" y2="240" stroke="#9CA3AF" stroke-width="1" opacity="0.5"/>
+    <text x="1475" y="268" text-anchor="middle" font-size="13" fill="#1F2937">多步自主决策</text>
+    <text x="1475" y="290" text-anchor="middle" font-size="13" fill="#1F2937">复杂任务编排</text>
+    <text x="1475" y="312" text-anchor="middle" font-size="13" fill="#1F2937">人机协作</text>
+    <text x="1475" y="334" text-anchor="middle" font-size="13" fill="#1F2937">生产部署</text>
+  </g>
+
+  <!-- ===== 箭头 ===== -->
+  <g stroke="#6B7280" stroke-width="2.5" fill="none" marker-end="url(#arrow)">
+    <line x1="262" y1="265" x2="305" y2="265"/>
+    <line x1="532" y1="265" x2="575" y2="265"/>
+    <line x1="802" y1="265" x2="845" y2="265"/>
+    <line x1="1072" y1="265" x2="1115" y2="265"/>
+    <line x1="1342" y1="265" x2="1385" y2="265"/>
+  </g>
+
+  <!-- 箭头标签 -->
+  <text x="283" y="258" text-anchor="middle" font-size="11" fill="#6B7280" font-style="italic">入门</text>
+  <text x="553" y="258" text-anchor="middle" font-size="11" fill="#6B7280" font-style="italic">动手</text>
+  <text x="823" y="258" text-anchor="middle" font-size="11" fill="#6B7280" font-style="italic">深入</text>
+  <text x="1093" y="258" text-anchor="middle" font-size="11" fill="#6B7280" font-style="italic">增强</text>
+  <text x="1363" y="258" text-anchor="middle" font-size="11" fill="#6B7280" font-style="italic">迭代</text>
+
+  <!-- ===== 反馈回路：评估 → 基础理论（迭代优化） ===== -->
+  <path d="M 1230 350 Q 1230 480 150 480 Q 150 480 150 362"
+        fill="none" stroke="#DC2626" stroke-width="3"
+        stroke-dasharray="8,4" marker-end="url(#arrow_accent)"/>
+  <text x="690" y="498" text-anchor="middle" font-size="14" fill="#DC2626" font-weight="bold" font-style="italic">
+    持续迭代优化（反馈驱动改进）
+  </text>
+
+  <!-- ===== 底部注释 ===== -->
+  <g>
+    <text x="40" y="580" font-size="13" fill="#6B7280">
+      建议学习周期：每个阶段 2-4 周，总计约 4-6 个月可达到自主智能体开发水平。
+    </text>
+    <text x="40" y="602" font-size="13" fill="#6B7280">
+      关键实践：每个阶段都配合实际项目练习，避免只看理论不动手。
+    </text>
+  </g>
+
+  <!-- ===== 底部图例 ===== -->
+  <g transform="translate(40, 640)">
+    <rect x="0" y="0" width="1520" height="40" rx="6" fill="#F9FAFB" stroke="#E5E7EB" stroke-width="1"/>
+    <line x1="30" y1="20" x2="80" y2="20" stroke="#6B7280" stroke-width="2.5" marker-end="url(#arrow)"/>
+    <text x="90" y="25" font-size="12" fill="#4B5563">正向流程</text>
+    <line x1="200" y1="20" x2="250" y2="20" stroke="#DC2626" stroke-width="3" stroke-dasharray="8,4" marker-end="url(#arrow_accent)"/>
+    <text x="260" y="25" font-size="12" fill="#4B5563">反馈回路（迭代优化）</text>
+    <circle cx="430" cy="20" r="10" fill="#7BA7D9"/>
+    <text x="430" y="25" text-anchor="middle" font-size="12" font-weight="bold" fill="#FFFFFF">1</text>
+    <text x="450" y="25" font-size="12" fill="#4B5563">学习阶段序号</text>
+  </g>
+
+</svg>
