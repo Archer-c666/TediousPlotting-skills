@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1840 760"
+     font-family="'Noto Sans CJK SC','Microsoft YaHei','SimHei','Times New Roman',sans-serif">
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6B7280"/>
+    </marker>
+  </defs>
+
+  <!-- ===== TITLE ===== -->
+  <text x="920" y="46" text-anchor="middle" font-size="28" font-weight="bold" fill="#1F2937">
+    DeepSeek 发展史 · Evolution of DeepSeek（2016–2026）
+  </text>
+  <text x="920" y="76" text-anchor="middle" font-size="14.5" fill="#6B7280" font-style="italic">
+    从量化基金到 V4：开源大模型的崛起之路 · from a quant hedge fund to the V4 era
+  </text>
+
+  <!-- ===== SPINE ===== -->
+  <line x1="108" y1="400" x2="1778" y2="400" stroke="#6B7280" stroke-width="3"
+        marker-end="url(#arrow)"/>
+  <text x="108" y="430" font-size="12.5" fill="#9CA3AF" font-style="italic">起 · start</text>
+  <text x="1772" y="430" text-anchor="end" font-size="12.5" fill="#9CA3AF" font-style="italic">时间 time →</text>
+
+  <!-- ============================================================ -->
+  <!-- NODE 1 · 2016 · ABOVE · neutral grey                          -->
+  <!-- ============================================================ -->
+  <line x1="220" y1="300" x2="220" y2="387" stroke="#6B7280" stroke-width="2"/>
+  <g>
+    <rect x="115" y="130" width="210" height="170" rx="12" fill="#F3F4F6" stroke="#6B7280" stroke-width="2.5"/>
+    <rect x="115" y="130" width="210" height="30" rx="12" fill="#6B7280"/>
+    <rect x="115" y="148" width="210" height="12" fill="#6B7280"/>
+    <text x="220" y="150" text-anchor="middle" font-size="13" font-weight="bold" fill="#FFFFFF">2016 · 缘起 Origin</text>
+    <text x="220" y="182" text-anchor="middle" font-size="15.5" font-weight="bold" fill="#1F2937">幻方量化成立</text>
+    <text x="220" y="200" text-anchor="middle" font-size="11.5" fill="#4B5563" font-style="italic">High-Flyer founded</text>
+    <text x="220" y="226" text-anchor="middle" font-size="11.5" fill="#4B5563">梁文锋创立量化对冲基金</text>
+    <text x="220" y="247" text-anchor="middle" font-size="11.5" fill="#4B5563">AI 驱动交易 · 早期囤积算力</text>
+    <text x="220" y="268" text-anchor="middle" font-size="11.5" fill="#6B7280">囤积约 1 万张 Nvidia GPU</text>
+  </g>
+  <circle cx="220" cy="400" r="13" fill="#6B7280" stroke="#FFFFFF" stroke-width="3"/>
+
+  <!-- ============================================================ -->
+  <!-- NODE 2 · 2023 · BELOW · indigo                                -->
+  <!-- ============================================================ -->
+  <line x1="426" y1="413" x2="426" y2="500" stroke="#6366F1" stroke-width="2"/>
+  <g>
+    <rect x="321" y="500" width="210" height="170" rx="12" fill="#E0E7FF" stroke="#6366F1" stroke-width="2.5"/>
+    <rect x="321" y="640" width="210" height="30" rx="12" fill="#6366F1"/>
+    <rect x="321" y="640" width="210" height="12" fill="#6366F1"/>
+    <text x="426" y="660" text-anchor="middle" font-size="13" font-weight="bold" fill="#FFFFFF">2023 · 公司成立</text>
+    <text x="426" y="530" text-anchor="middle" font-size="15.5" font-weight="bold" fill="#1F2937">DeepSeek 诞生</text>
+    <text x="426" y="548" text-anchor="middle" font-size="11.5" fill="#4B5563" font-style="italic">Spun out of High-Flyer</text>
+    <text x="426" y="574" text-anchor="middle" font-size="11.5" fill="#4B5563">4 月 AGI 实验室宣布成立</text>
+    <text x="426" y="595" text-anchor="middle" font-size="11.5" fill="#4B5563">7 月 17 日独立注册（杭州）</text>
+    <text x="426" y="616" text-anchor="middle" font-size="11.5" fill="#6B7280">梁文锋任 CEO · 幻方独家出资</text>
+  </g>
+  <circle cx="426" cy="400" r="13" fill="#6366F1" stroke="#FFFFFF" stroke-width="3"/>
+
+  <!-- ============================================================ -->
+  <!-- NODE 3 · 2023.11 · ABOVE · cyan                               -->
+  <!-- ============================================================ -->
+  <line x1="632" y1="300" x2="632" y2="387" stroke="#06B6D4" stroke-width="2"/>
+  <g>
+    <rect x="527" y="130" width="210" height="170" rx="12" fill="#CFFAFE" stroke="#06B6D4" stroke-width="2.5"/>
+    <rect x="527" y="130" width="210" height="30" rx="12" fill="#06B6D4"/>
+    <rect x="527" y="148" width="210" height="12" fill="#06B6D4"/>
+    <text x="632" y="150" text-anchor="middle" font-size="13" font-weight="bold" fill="#FFFFFF">2023.11 · 首批模型</text>
+    <text x="632" y="182" text-anchor="middle" font-size="15.5" font-weight="bold" fill="#1F2937">Coder + LLM</text>
+    <text x="632" y="200" text-anchor="middle" font-size="11.5" fill="#4B5563" font-style="italic">First open-weight models</text>
+    <text x="632" y="226" text-anchor="middle" font-size="11.5" fill="#4B5563">Coder（11/2）代码模型</text>
+    <text x="632" y="247" text-anchor="middle" font-size="11.5" fill="#4B5563">LLM（11/29）7B / 67B</text>
+    <text x="632" y="268" text-anchor="middle" font-size="11.5" fill="#6B7280">开源权重 + 技术报告</text>
+  </g>
+  <circle cx="632" cy="400" r="13" fill="#06B6D4" stroke="#FFFFFF" stroke-width="3"/>
+
+  <!-- ============================================================ -->
+  <!-- NODE 4 · 2024.05 · BELOW · amber                              -->
+  <!-- ============================================================ -->
+  <line x1="838" y1="413" x2="838" y2="500" stroke="#F59E0B" stroke-width="2"/>
+  <g>
+    <rect x="733" y="500" width="210" height="170" rx="12" fill="#FEF3C7" stroke="#F59E0B" stroke-width="2.5"/>
+    <rect x="733" y="640" width="210" height="30" rx="12" fill="#F59E0B"/>
+    <rect x="733" y="640" width="210" height="12" fill="#F59E0B"/>
+    <text x="838" y="660" text-anchor="middle" font-size="13" font-weight="bold" fill="#FFFFFF">2024.05 · 架构突破</text>
+    <text x="838" y="530" text-anchor="middle" font-size="15.5" font-weight="bold" fill="#1F2937">DeepSeek-V2</text>
+    <text x="838" y="548" text-anchor="middle" font-size="11.5" fill="#4B5563" font-style="italic">MLA architecture</text>
+    <text x="838" y="574" text-anchor="middle" font-size="11.5" fill="#4B5563">首创多头潜注意力 MLA</text>
+    <text x="838" y="595" text-anchor="middle" font-size="11.5" fill="#4B5563">引爆中国大模型价格战</text>
+    <text x="838" y="616" text-anchor="middle" font-size="11.5" fill="#6B7280">阿里 · 百度跟进降价 95%+</text>
+  </g>
+  <circle cx="838" cy="400" r="13" fill="#F59E0B" stroke="#FFFFFF" stroke-width="3"/>
+
+  <!-- ============================================================ -->
+  <!-- NODE 5 · 2024.12 · ABOVE · emerald                            -->
+  <!-- ============================================================ -->
+  <line x1="1044" y1="300" x2="1044" y2="387" stroke="#10B981" stroke-width="2"/>
+  <g>
+    <rect x="939" y="130" width="210" height="170" rx="12" fill="#D1FAE5" stroke="#10B981" stroke-width="2.5"/>
+    <rect x="939" y="130" width="210" height="30" rx="12" fill="#10B981"/>
+    <rect x="939" y="148" width="210" height="12" fill="#10B981"/>
+    <text x="1044" y="150" text-anchor="middle" font-size="13" font-weight="bold" fill="#FFFFFF">2024.12 · 规模化</text>
+    <text x="1044" y="182" text-anchor="middle" font-size="15.5" font-weight="bold" fill="#1F2937">DeepSeek-V3</text>
+    <text x="1044" y="200" text-anchor="middle" font-size="11.5" fill="#4B5563" font-style="italic">671B MoE model</text>
+    <text x="1044" y="226" text-anchor="middle" font-size="11.5" fill="#4B5563">671B 参数 · 37B 激活/token</text>
+    <text x="1044" y="247" text-anchor="middle" font-size="11.5" fill="#4B5563">无辅助损失负载均衡</text>
+    <text x="1044" y="268" text-anchor="middle" font-size="11.5" fill="#6B7280">训练算力成本 ~$5.6M</text>
+  </g>
+  <circle cx="1044" cy="400" r="13" fill="#10B981" stroke="#FFFFFF" stroke-width="3"/>
+
+  <!-- ============================================================ -->
+  <!-- NODE 6 · 2025.01 · BELOW · ACCENT (R1, key milestone)         -->
+  <!-- ============================================================ -->
+  <line x1="1250" y1="418" x2="1250" y2="500" stroke="#DC2626" stroke-width="3"/>
+  <g>
+    <rect x="1145" y="500" width="210" height="170" rx="12" fill="#FEE2E2" stroke="#DC2626" stroke-width="3"/>
+    <rect x="1145" y="640" width="210" height="30" rx="12" fill="#DC2626"/>
+    <rect x="1145" y="640" width="210" height="12" fill="#DC2626"/>
+    <text x="1250" y="660" text-anchor="middle" font-size="13" font-weight="bold" fill="#FFFFFF">2025.01 · Sputnik 时刻</text>
+    <text x="1250" y="530" text-anchor="middle" font-size="15.5" font-weight="bold" fill="#1F2937">DeepSeek-R1</text>
+    <text x="1250" y="548" text-anchor="middle" font-size="11.5" fill="#4B5563" font-style="italic">Open reasoning model</text>
+    <text x="1250" y="574" text-anchor="middle" font-size="11.5" fill="#4B5563">1/20 发布 · 对标 OpenAI o1</text>
+    <text x="1250" y="595" text-anchor="middle" font-size="11.5" fill="#4B5563">英伟达市值单日蒸发 $600B</text>
+    <text x="1250" y="616" text-anchor="middle" font-size="11.5" fill="#6B7280">全球震动 · MIT 开源</text>
+  </g>
+  <circle cx="1250" cy="400" r="18" fill="#DC2626" stroke="#FFFFFF" stroke-width="3"/>
+  <path d="M1250,393 L1251.65,397.74 L1256.66,397.84 L1252.66,400.87 L1254.11,405.66 L1250,402.8 L1245.89,405.66 L1247.34,400.87 L1243.34,397.84 L1248.35,397.74 Z" fill="#FFFFFF"/>
+
+  <!-- ============================================================ -->
+  <!-- NODE 7 · 2025 · ABOVE · amber                                 -->
+  <!-- ============================================================ -->
+  <line x1="1456" y1="300" x2="1456" y2="387" stroke="#F59E0B" stroke-width="2"/>
+  <g>
+    <rect x="1351" y="130" width="210" height="170" rx="12" fill="#FEF3C7" stroke="#F59E0B" stroke-width="2.5"/>
+    <rect x="1351" y="130" width="210" height="30" rx="12" fill="#F59E0B"/>
+    <rect x="1351" y="148" width="210" height="12" fill="#F59E0B"/>
+    <text x="1456" y="150" text-anchor="middle" font-size="13" font-weight="bold" fill="#FFFFFF">2025 · 迭代与风波</text>
+    <text x="1456" y="182" text-anchor="middle" font-size="15.5" font-weight="bold" fill="#1F2937">持续迭代</text>
+    <text x="1456" y="200" text-anchor="middle" font-size="11.5" fill="#4B5563" font-style="italic">Iteration &amp; scrutiny</text>
+    <text x="1456" y="226" text-anchor="middle" font-size="11.5" fill="#4B5563">R1-0528 更新 · R2 延后</text>
+    <text x="1456" y="247" text-anchor="middle" font-size="11.5" fill="#4B5563">V3.1 DeepThink → V3.2</text>
+    <text x="1456" y="268" text-anchor="middle" font-size="11.5" fill="#6B7280">多国监管限制使用</text>
+  </g>
+  <circle cx="1456" cy="400" r="13" fill="#F59E0B" stroke="#FFFFFF" stroke-width="3"/>
+
+  <!-- ============================================================ -->
+  <!-- NODE 8 · 2026.04 · BELOW · indigo                             -->
+  <!-- ============================================================ -->
+  <line x1="1662" y1="413" x2="1662" y2="500" stroke="#6366F1" stroke-width="2"/>
+  <g>
+    <rect x="1557" y="500" width="210" height="170" rx="12" fill="#E0E7FF" stroke="#6366F1" stroke-width="2.5"/>
+    <rect x="1557" y="640" width="210" height="30" rx="12" fill="#6366F1"/>
+    <rect x="1557" y="640" width="210" height="12" fill="#6366F1"/>
+    <text x="1662" y="660" text-anchor="middle" font-size="13" font-weight="bold" fill="#FFFFFF">2026.04 · 新世代</text>
+    <text x="1662" y="530" text-anchor="middle" font-size="15.5" font-weight="bold" fill="#1F2937">DeepSeek-V4 Preview</text>
+    <text x="1662" y="548" text-anchor="middle" font-size="11.5" fill="#4B5563" font-style="italic">Two-tier MoE</text>
+    <text x="1662" y="574" text-anchor="middle" font-size="11.5" fill="#4B5563">Pro 1.6T / 49B 激活</text>
+    <text x="1662" y="595" text-anchor="middle" font-size="11.5" fill="#4B5563">Flash 284B / 13B 激活</text>
+    <text x="1662" y="616" text-anchor="middle" font-size="11.5" fill="#6B7280">原生 1M 上下文 · MIT 开源</text>
+  </g>
+  <circle cx="1662" cy="400" r="13" fill="#6366F1" stroke="#FFFFFF" stroke-width="3"/>
+
+  <!-- ===== LEGEND / FOOTNOTE ===== -->
+  <g>
+    <circle cx="690" cy="722" r="8" fill="#DC2626" stroke="#FFFFFF" stroke-width="2"/>
+    <path d="M690,716.5 L691.1,719.7 L694.5,719.8 L691.8,721.8 L692.8,725 L690,723 L687.2,725 L688.2,721.8 L685.5,719.8 L688.9,719.7 Z" fill="#FFFFFF"/>
+    <text x="706" y="726" font-size="12.5" fill="#6B7280" font-style="italic">红色高亮 = R1「Sputnik 时刻」，时间轴上影响最大的事件</text>
+    <text x="1240" y="726" font-size="12.5" fill="#9CA3AF" font-style="italic">· 卡片上下交错以避免重叠</text>
+  </g>
+</svg>
