@@ -26,6 +26,13 @@ git clone https://github.com/Archer-Ming/TediousPlotting-skills.git
 
 **将skills文件夹里你想要的skill添加到 *claude code*  里即可使用**
 
+### Codex
+
+```
+mkdir -p ~/.codex/skills/
+git clone https://github.com/Archer-Ming/TediousPlotting-skills.git ~/.codex/skills/my-skill
+```
+
 ### **miniAgent(Personal Test)**
 
 ***miniAgent逐步完善且成为了一个重要分支！它现在支持PNG/SVG/HTML输出***
@@ -155,7 +162,7 @@ frame-skill/                               针对SCI论文，竞赛的高质量�
 
  D3.js构建高质量交互式可视化，实现高质量，高交互性图的需求
 
-严格规范了设计理念，贴合人类视觉交互配色，高质量交互。提供打磨过的质量模板供模型学习。
+严格规范了习语设计理念，贴合人类视觉交互配色，高质量交互。提供打磨过的质量模板供模型学习。
 
 |      旭日图      | 矩形树图             | 力导向图         | 矩阵热图             |
 | :--------------: | -------------------- | ---------------- | -------------------- |
